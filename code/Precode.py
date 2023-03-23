@@ -17,5 +17,6 @@ def get_unique_student_groups(student_groups):
 student_groups = get_unique_student_groups(dataset_courses['student_group'])
 days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
-print(courses)
-print(student_groups)
+def generate_genome(length):
+    return choices([0,1], k=length)
+

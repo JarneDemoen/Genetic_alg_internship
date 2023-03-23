@@ -1,0 +1,2 @@
+ - Understanding the course schedule and the schedule of the teachers
+ - Converting the physical documents into excel data

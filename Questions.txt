@@ -1,0 +1,4 @@
+ - What is the meaning of mestr and posdt?
+ - When does a class split in two like algoritmos e programacao for example?
+ - How to know who is the main teacher? Is my database correct?
+
