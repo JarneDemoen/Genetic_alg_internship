@@ -1,5 +1,8 @@
 import pandas as pd
 from random import choices
+import os
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 dataset_courseSchedule = pd.read_csv('../data/CourseSchedule.csv', sep=';')
 # sort the dataset_courseSchedule by ET
@@ -8,9 +11,11 @@ dataset_courseSchedule = dataset_courseSchedule.sort_values(by=['ET'])
 dataset_subjectsPP = pd.read_csv('../data/Courses.csv', sep=';')
 dataset_professors = pd.read_csv('../data/Professors.csv', sep=';')
 
-semester = 1
+# create a dataset where the semesters are uneven
+dataset_courseSchedule_semester_uneven = dataset_courseSchedule[dataset_courseSchedule['ET'] % 2 != 0]
 
-dataset_courseSchedule_semester = dataset_courseSchedule[dataset_courseSchedule['ET'] == semester]
+# create a dataset where the semesters are even
+dataset_courseSchedule_semester_even = dataset_courseSchedule[dataset_courseSchedule['ET'] % 2 == 0]
 
 timeslots_day = [
     "7:10-8:00",
@@ -54,11 +59,6 @@ def generate_bit_length(db_length):
         if value >= db_length:
             return i+1
 
-len_classes_encoding = generate_bit_length(len(dataset_courseSchedule_semester))
-len_professors_encoding = generate_bit_length(len(dataset_professors))
-len_timeslots_day_encoding = generate_bit_length(len(days))
-len_timeslots_encoding = generate_bit_length(len(timeslots_day))
-
 def generate_genome_part(length, database):
     binary_value = 100000
     genome = []
@@ -72,7 +72,7 @@ def generate_genome_part(length, database):
             i += 1
     return genome
 
-def generate_genome():
+def encode_class_scheduling():
     genome_class_binary = generate_genome_part(len_classes_encoding, dataset_courseSchedule_semester)
     genome_professor_binary = generate_genome_part(len_professors_encoding, dataset_professors)
     genome_timeslot_day_binary = generate_genome_part(len_timeslots_day_encoding, days)
@@ -80,4 +80,51 @@ def generate_genome():
     genome = genome_class_binary + genome_professor_binary + genome_timeslot_day_binary + genome_timeslot_binary
     return genome
 
-print(generate_genome())
+def generate_genome(size):
+    return [encode_class_scheduling() for i in range(size)]
+
+def translate_class_scheduling(encoded_part):
+    # reverse the encoded_part
+    reverse_encoded_part = encoded_part[::-1]
+    binary_value = 0
+    i = 0
+    for bit in reverse_encoded_part:
+        binary_value += bit*2**i
+        i += 1
+    return binary_value
+
+def translate_genome(genome):
+    translation = []
+    for class_scheduling in genome:
+        end = len_classes_encoding
+        class_part_value = translate_class_scheduling(class_scheduling[:end])
+        start = end
+        end += len_professors_encoding
+        professor_part_value = translate_class_scheduling(class_scheduling[start:end])
+        start = end
+        end += len_timeslots_day_encoding
+        timeslots_day_part_value = translate_class_scheduling(class_scheduling[start:end])
+        start = end
+        end += len_timeslots_encoding
+        timeslots_part_value = translate_class_scheduling(class_scheduling[start:end])
+        class_part_translation = dataset_courseSchedule_semester['DISCIPLINA'][class_part_value]
+        professor_part_translation = dataset_professors['CODE'][professor_part_value]
+        timeslots_day_part_translation = days[timeslots_day_part_value]
+        timeslots_part_translation = timeslots_day[timeslots_part_value]
+
+        # return a sentence with the translation of the genome
+        translation.append("The class {} will be taught by {} on {} at {}".format(class_part_translation, professor_part_translation, timeslots_day_part_translation, timeslots_part_translation))
+    
+    return translation
+
+dataset_courseSchedule_semester = dataset_courseSchedule_semester_uneven
+# reindex the database
+dataset_courseSchedule_semester = dataset_courseSchedule_semester.reset_index(drop=True)
+len_classes_encoding = generate_bit_length(len(dataset_courseSchedule_semester))
+len_professors_encoding = generate_bit_length(len(dataset_professors))
+len_timeslots_day_encoding = generate_bit_length(len(days))
+len_timeslots_encoding = generate_bit_length(len(timeslots_day))
+
+genome = generate_genome(len(dataset_courseSchedule_semester))
+
+print(translate_genome(genome))
