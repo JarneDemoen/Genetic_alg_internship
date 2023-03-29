@@ -83,7 +83,7 @@ def encode_class_scheduling():
 def generate_genome(size):
     return [encode_class_scheduling() for i in range(size)]
 
-def translate_class_scheduling(encoded_part):
+def get_binary_value_class_scheduling_part(encoded_part):
     # reverse the encoded_part
     reverse_encoded_part = encoded_part[::-1]
     binary_value = 0
@@ -93,27 +93,33 @@ def translate_class_scheduling(encoded_part):
         i += 1
     return binary_value
 
+def get_class_part(class_scheduling):
+    return class_scheduling[:len_classes_encoding]
+
+def get_professor_part(class_scheduling):
+    return class_scheduling[len_classes_encoding:len_classes_encoding+len_professors_encoding]
+
+def get_timeslot_day_part(class_scheduling):
+    return class_scheduling[len_classes_encoding+len_professors_encoding:len_classes_encoding+len_professors_encoding+len_timeslots_day_encoding]
+
+def get_timeslot_part(class_scheduling):
+    return class_scheduling[len_classes_encoding+len_professors_encoding+len_timeslots_day_encoding:]
+
 def translate_genome(genome):
     translation = []
     for class_scheduling in genome:
-        end = len_classes_encoding
-        class_part_value = translate_class_scheduling(class_scheduling[:end])
-        start = end
-        end += len_professors_encoding
-        professor_part_value = translate_class_scheduling(class_scheduling[start:end])
-        start = end
-        end += len_timeslots_day_encoding
-        timeslots_day_part_value = translate_class_scheduling(class_scheduling[start:end])
-        start = end
-        end += len_timeslots_encoding
-        timeslots_part_value = translate_class_scheduling(class_scheduling[start:end])
+        class_part_value = get_binary_value_class_scheduling_part(get_class_part(class_scheduling))
+        professor_part_value = get_binary_value_class_scheduling_part(get_professor_part(class_scheduling))
+        timeslots_day_part_value = get_binary_value_class_scheduling_part(get_timeslot_day_part(class_scheduling))
+        timeslots_part_value = get_binary_value_class_scheduling_part(get_timeslot_part(class_scheduling))
+
         class_part_translation = dataset_courseSchedule_semester['DISCIPLINA'][class_part_value]
         professor_part_translation = dataset_professors['CODE'][professor_part_value]
         timeslots_day_part_translation = days[timeslots_day_part_value]
         timeslots_part_translation = timeslots_day[timeslots_part_value]
 
         # return a sentence with the translation of the genome
-        translation.append("The class {} will be taught by {} on {} at {}".format(class_part_translation, professor_part_translation, timeslots_day_part_translation, timeslots_part_translation))
+        translation.append({"class": class_part_translation, "professor": professor_part_translation, "timeslot_day": timeslots_day_part_translation, "timeslot": timeslots_part_translation})
     
     return translation
 
@@ -126,5 +132,4 @@ len_timeslots_day_encoding = generate_bit_length(len(days))
 len_timeslots_encoding = generate_bit_length(len(timeslots_day))
 
 genome = generate_genome(len(dataset_courseSchedule_semester))
-
-print(translate_genome(genome))
+translation = translate_genome(genome)

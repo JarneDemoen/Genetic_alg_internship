@@ -1,2 +1,2 @@
- - make sure that the semester is dynamic, everything has to be generated for each semester
- - a genome is not only the encoding of one course, it is the encoding of all the semesters and their courses!
+ - create a visualisation of the generated genome
+ - to evaluate in the fitness function, use all of the binary values of the parts of the genome, create a new function: convert genome to binary
