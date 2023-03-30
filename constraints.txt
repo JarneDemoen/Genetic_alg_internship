@@ -1,0 +1,2 @@
+ - all classes must be scheduled for 2 or 4 successive timeslots on a single day
+ - theory classes must be put together, lab classes must be seperated

@@ -1,2 +1,1 @@
- - create a visualisation of the generated genome
- - to evaluate in the fitness function, use all of the binary values of the parts of the genome, create a new function: convert genome to binary
+- change the database according to the new correct data
