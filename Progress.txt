@@ -1,3 +1,3 @@
  - Understanding the course schedule and the schedule of the teachers
- - Converting the physical documents into excel data
+ - Converting the physical documents into excel data and converting it into a csv file for the program to read
  - Creation of a genome by generating a list of binary numbers and then translating the binary code to actual teachers, subjects...

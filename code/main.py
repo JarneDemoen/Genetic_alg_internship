@@ -18,7 +18,6 @@ dataset_courseSchedule_semester_uneven = dataset_courseSchedule[dataset_courseSc
 dataset_courseSchedule_semester_even = dataset_courseSchedule[dataset_courseSchedule['ET'] % 2 == 0]
 
 timeslots_day = [
-    "18:00-18:50",
     "19:00-19:50",
     "19:50-20:40",
     "20:55-21:45",
@@ -123,7 +122,9 @@ def translate_genome(genome):
 
         # return the translated data of the genome in a dictionary
         translation.append({"class": class_part_translation,"class_type":class_type_translation,"class_group":class_group_translation,"professor": professor_part_translation, "timeslot_day": timeslots_day_part_translation, "timeslot": timeslots_part_translation})
-    
+        # sort the translation by timeslot_day and timeslot
+        translation = sorted(translation, key=lambda k: (k['timeslot_day'], k['timeslot']))
+        
     return translation
 
 def translate_genome_to_hex(genome):
@@ -150,6 +151,8 @@ def check_100_rule(hex_genome):
     for index_day in range(len(days)):
         # return a dictionary with the classes of the day
         classes_day = [x for x in hex_genome_sorted if x['timeslot_day'] == index_day]
+        # print("classes_day: ", classes_day)
+        # print("------------------")
         # check if there are classes that day, if not, continue, it could be that there are no classes on that day, score stays 0
         if len(classes_day) == 0:
             continue
@@ -157,7 +160,11 @@ def check_100_rule(hex_genome):
         for i in range(len(classes_day) - 1): # index to compare to 2 courses being taught on the same day
             for index_timeslot in range(len(timeslots_day)):
                 if classes_day[i]['timeslot'] == index_timeslot and classes_day[i+1]['timeslot'] == index_timeslot + 1:
-                    if classes_day[i]['class'] == classes_day[i+1]['class']:
+                    if classes_day[i]['class'] == classes_day[i+1]['class'] and classes_day[i]['class_type'] == classes_day[i+1]['class_type'] and classes_day[i]['class_group'] == classes_day[i+1]['class_group'] and classes_day[i]['professor'] == classes_day[i+1]['professor']:
+                        print("Great! 2 of the same classes are being taught on successive timeslots!")
+                        print("classes_day[i]: ", classes_day[i])
+                        print("classes_day[i+1]: ", classes_day[i+1])
+                        print("------------------")
                         score += 1
     return score
 
@@ -168,8 +175,14 @@ def check_conflict_rule(hex_genome):
         for index_timeslot in range(len(timeslots_day)):
             classes_day_timeslot = [x for x in hex_genome if x['timeslot_day'] == index_day and x['timeslot'] == index_timeslot]
             if len(classes_day_timeslot) > 1:
-                score -= 1
-                break
+                # compare all of the classes with each other, if the classes are the same, the score is deducted by one
+                for i in range(len(classes_day_timeslot) - 1):
+                    for j in range(i + 1, len(classes_day_timeslot)):
+                        if classes_day_timeslot[i]['class'] == classes_day_timeslot[j]['class']:
+                            if classes_day_timeslot[i]['class_type'] == classes_day_timeslot[j]['class_type'] and classes_day_timeslot[i]['class_type'] == "AP":
+                                score -= 1
+                                print("conflict: ", classes_day_timeslot[i], classes_day_timeslot[j])
+
 
     score = score if score > 0 else 0
     return score
@@ -177,8 +190,8 @@ def check_conflict_rule(hex_genome):
 def fitness(hex_genome):
     score_100_rule = check_100_rule(hex_genome)
     score_conflict_rule = check_conflict_rule(hex_genome)
-    # print("100 rule score: ", score_100_rule)
-    # print("Conflict rule score: ", score_conflict_rule)
+    print("100 rule score: ", score_100_rule)
+    print("Conflict rule score: ", score_conflict_rule)
 
 dataset_courseSchedule_semester = dataset_courseSchedule_semester_uneven
 # reindex the database
@@ -194,3 +207,4 @@ genome = generate_genome(len(dataset_courseSchedule_semester))
 translation = translate_genome(genome)
 binary_translation = translate_genome_to_hex(genome)
 fitness(binary_translation)
+print("translation: ", translation)

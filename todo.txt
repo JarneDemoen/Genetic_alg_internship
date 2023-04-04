@@ -1,1 +1,1 @@
-- change the database according to the new correct data
+- finish the algorithm, find a good fitness function?
