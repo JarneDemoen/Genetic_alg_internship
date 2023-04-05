@@ -1,3 +1,10 @@
  - Understanding the course schedule and the schedule of the teachers
  - Converting the physical documents into excel data and converting it into a csv file for the program to read
  - Creation of a genome by generating a list of binary numbers and then translating the binary code to actual teachers, subjects...
+
+ Constraints:
+- All classes should be scheduled for 2 or 4 hours straight, with the same variables = check_100_rule
+- AT classes should be scheduled together on the same timeslot with the same professor = schedule_at
+- You can schedule courses on Saturday but only in emergency cases
+
+ 

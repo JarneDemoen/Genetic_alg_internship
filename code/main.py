@@ -24,7 +24,7 @@ timeslots_day = [
     "21:45-22:35"]
 
 days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-class_types = ["AT", "AP"]
+class_types = ["AT", "AP", "AV"]
 class_groups = ["A","B"]
 
 # create a pandas dataframe where you combine the timeslots and days
@@ -41,6 +41,7 @@ for professor in dataset_professors['CODE']:
     for index in range(len(dataset_subjectsPP)):
         if dataset_subjectsPP['PROFESSOR CODE'][index] == professor:
             professor_courses[professor_code].append(dataset_subjectsPP['DISCIPLINA'][index])
+
 
 def generate_bit_length(db_length):
     value = 0
@@ -103,6 +104,35 @@ def get_timeslot_day_part(class_scheduling):
 def get_timeslot_part(class_scheduling):
     return class_scheduling[len_classes_encoding+len_class_types_encoding+len_class_groups_encoding+len_professors_encoding+len_timeslots_day_encoding:]
 
+def get_class_scheduling_count(translated_genome):
+    score = 0
+
+    for index_class in range(len(dataset_courseSchedule_semester)):
+        nr_at = {}
+        nr_ap = {}
+
+        for class_group in class_groups:
+            nr_at[class_group] = dataset_courseSchedule_semester['AT'][index_class]
+            nr_ap[class_group] = dataset_courseSchedule_semester['AP'][index_class]
+
+        for class_scheduling in translated_genome:
+            if class_scheduling['class'] == dataset_courseSchedule_semester['DISCIPLINA'][index_class] and class_scheduling['class_type'] == "AT":
+                nr_at[class_scheduling['class_group']] -= 1
+
+            if class_scheduling['class'] == dataset_courseSchedule_semester['DISCIPLINA'][index_class] and class_scheduling['class_type'] == "AP":
+                nr_ap[class_scheduling['class_group']] -= 1
+
+        # if the values in the dictionary are all 0, then the class is scheduled correctly
+        if all(value == 0 for value in nr_at.values()) and all(value == 0 for value in nr_ap.values()):
+            score += 1
+            print("class: ", dataset_courseSchedule_semester['DISCIPLINA'][index_class])
+            print("nr_at: ", nr_at)
+            print("nr_ap: ", nr_ap)
+            print("---------------------")
+
+    return score
+
+
 def translate_genome(genome):
     translation = []
     for class_scheduling in genome:
@@ -143,6 +173,18 @@ def translate_genome_to_hex(genome):
     translation = sorted(translation, key=lambda k: (k['timeslot_day'], k['timeslot']))
     return translation
 
+def emergency_saturday_class(hex_genome):
+    # sort the dictionary of the hex_genome based on the timeslot_day and timeslot
+    hex_genome_sorted = sorted(hex_genome, key=lambda k: (k['timeslot_day'], k['timeslot']))
+    score = 0
+    # check if there are classes on saturday
+    classes_day = [x for x in hex_genome_sorted if x['timeslot_day'] == 5]
+
+    if len(classes_day) == 0:
+        score += 3
+
+    return score
+
 def check_100_rule(hex_genome):
     # sort the dictionary of the hex_genome based on the timeslot_day and timeslot
     hex_genome_sorted = sorted(hex_genome, key=lambda k: (k['timeslot_day'], k['timeslot']))
@@ -168,8 +210,8 @@ def check_100_rule(hex_genome):
                         score += 1
     return score
 
-def check_conflict_rule(hex_genome):
-    score = 3
+def schedule_at(hex_genome):
+    score = 0
     
     for index_day in range(len(days)):
         for index_timeslot in range(len(timeslots_day)):
@@ -179,20 +221,30 @@ def check_conflict_rule(hex_genome):
                 for i in range(len(classes_day_timeslot) - 1):
                     for j in range(i + 1, len(classes_day_timeslot)):
                         if classes_day_timeslot[i]['class'] == classes_day_timeslot[j]['class']:
-                            if classes_day_timeslot[i]['class_type'] == classes_day_timeslot[j]['class_type'] and classes_day_timeslot[i]['class_type'] == "AP":
-                                score -= 1
-                                print("conflict: ", classes_day_timeslot[i], classes_day_timeslot[j])
-
-
-    score = score if score > 0 else 0
+                            if classes_day_timeslot[i]['class_type'] == classes_day_timeslot[j]['class_type'] and classes_day_timeslot[i]['class_type'] == 0 and classes_day_timeslot[i]['class_group'] != classes_day_timeslot[j]['class_group'] and classes_day_timeslot[i]['professor'] == classes_day_timeslot[j]['professor']:
+                                print("Correctly scheduled AT class")
+                                print(classes_day_timeslot[i])
+                                print(classes_day_timeslot[j])
+                                print("------------------")
+                                score += 1
     return score
 
-def fitness(hex_genome):
-    score_100_rule = check_100_rule(hex_genome)
-    score_conflict_rule = check_conflict_rule(hex_genome)
-    print("100 rule score: ", score_100_rule)
-    print("Conflict rule score: ", score_conflict_rule)
+def print_translation(translation):
+    for class_scheduling in translation:
+        print(class_scheduling)
 
+def fitness(genome):
+    hex_genome = translate_genome_to_hex(genome)
+    translation = translate_genome(genome)
+
+    score_100_rule = check_100_rule(hex_genome)
+    score_schedule_at = schedule_at(hex_genome)
+    score_emergency_saturday_class = emergency_saturday_class(hex_genome)
+    score_class_scheduling_count = get_class_scheduling_count(translation)
+
+    total_score = score_100_rule + score_schedule_at + score_emergency_saturday_class + score_class_scheduling_count
+    return {"total_score": total_score, "score_100_rule": score_100_rule, "score_schedule_at": score_schedule_at, "score_emergency_saturday_class": score_emergency_saturday_class, "score_class_scheduling_count": score_class_scheduling_count}
+    
 dataset_courseSchedule_semester = dataset_courseSchedule_semester_uneven
 # reindex the database
 dataset_courseSchedule_semester = dataset_courseSchedule_semester.reset_index(drop=True)
@@ -203,8 +255,22 @@ len_professors_encoding = generate_bit_length(len(dataset_professors))
 len_timeslots_day_encoding = generate_bit_length(len(days))
 len_timeslots_encoding = generate_bit_length(len(timeslots_day))
 
-genome = generate_genome(len(dataset_courseSchedule_semester))
-translation = translate_genome(genome)
-binary_translation = translate_genome_to_hex(genome)
-fitness(binary_translation)
-print("translation: ", translation)
+def run_genetic_algorithm():
+    done = False
+    while not done:
+        genome = generate_genome(len(dataset_courseSchedule_semester))
+
+        translation = translate_genome(genome)
+        # print_translation(translation)
+        # done = True # Debugging purposes
+        fitness_genome = fitness(genome)
+        if fitness_genome['score_class_scheduling_count'] > 0:
+            done = True
+            print_translation(translation)
+            print("Score_100_rule: ", fitness_genome['score_100_rule'])
+            print("Score_schedule_at: ", fitness_genome['score_schedule_at'])
+            print("Score_emergency_saturday_class: ", fitness_genome['score_emergency_saturday_class'])
+            print("Score_class_scheduling_count: ", fitness_genome['score_class_scheduling_count'])
+
+
+run_genetic_algorithm()
