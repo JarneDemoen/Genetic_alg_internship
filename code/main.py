@@ -1,5 +1,5 @@
 import pandas as pd
-from random import choices
+from random import choices, randint
 import os
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -73,7 +73,9 @@ def encode_class_scheduling():
     genome = genome_class_binary + genome_class_type_binary + genome_class_group_binary + genome_professor_binary + genome_timeslot_day_binary + genome_timeslot_binary
     return genome
 
-def generate_genome(size):
+def generate_genome():
+    # determine here how much classes you want to schedule according to the number of class groups
+    size = "?"
     return [encode_class_scheduling() for i in range(size)]
 
 def get_binary_value_class_scheduling_part(encoded_part):
@@ -258,8 +260,6 @@ def schedule_at(hex_genome):
     return score
 
 def print_translation(translation):
-    # sort the translation based on the et value
-    translation = sorted(translation, key=lambda k: (k['et']))
     for class_scheduling in translation:
         print(class_scheduling)
 
@@ -274,8 +274,9 @@ def fitness(genome):
     score_professor_scheduling = check_professor_scheduling(translation)
 
     total_score = score_100_rule + score_schedule_at + score_emergency_saturday_class + score_class_scheduling_count + score_professor_scheduling
-    return {"total_score": total_score, "score_100_rule": score_100_rule, "score_schedule_at": score_schedule_at, "score_emergency_saturday_class": score_emergency_saturday_class, "score_class_scheduling_count": score_class_scheduling_count, "score_professor_scheduling": score_professor_scheduling}
-    
+    # return {"total_score": total_score, "score_100_rule": score_100_rule, "score_schedule_at": score_schedule_at, "score_emergency_saturday_class": score_emergency_saturday_class, "score_class_scheduling_count": score_class_scheduling_count, "score_professor_scheduling": score_professor_scheduling}
+    return total_score
+
 dataset_courseSchedule_semester = dataset_courseSchedule_semester_even
 # reindex the database
 dataset_courseSchedule_semester = dataset_courseSchedule_semester.reset_index(drop=True)
@@ -286,23 +287,83 @@ len_professors_encoding = generate_bit_length(len(dataset_professors))
 len_timeslots_day_encoding = generate_bit_length(len(days))
 len_timeslots_encoding = generate_bit_length(len(timeslots_day))
 
-def run_genetic_algorithm():
-    done = False
-    while not done:
-        genome = generate_genome(len(dataset_courseSchedule_semester))
+def generate_population(population_size):
+    population = []
+    for i in range(population_size):
+        population.append(generate_genome())
+    return population
 
-        translation = translate_genome(genome)
-        # print_translation(translation)
-        # done = True # Debugging purposes
-        fitness_genome = fitness(genome)
-        if fitness_genome['score_100_rule'] > 0:
-            done = True
-            print_translation(translation)
-            print("Score_100_rule: ", fitness_genome['score_100_rule'])
-            print("Score_schedule_at: ", fitness_genome['score_schedule_at'])
-            print("Score_emergency_saturday_class: ", fitness_genome['score_emergency_saturday_class'])
-            print("Score_class_scheduling_count: ", fitness_genome['score_class_scheduling_count'])
-            print("Score_professor_scheduling: ", fitness_genome['score_professor_scheduling'])
+def select_parents(population, fitness):
+    return choices(
+        population=population,
+        weights=[fitness(genome) for genome in population],
+        k=2
+    )
 
-run_genetic_algorithm()
+def crossover(parent_a, parent_b):
+    # for the crossover function we use a single-point crossover
+    # we pick a random index in the genome and split the genome into two parts
+    # the first part is from the first parent and the second part is from the second parent
+    # we then combine the two parts to get the two children
+    # we use the same index for both parents to ensure that the children are the same length as the parents
+    if len(parent_a) != len(parent_b):
+        raise ValueError("Genomes must be the same length")
+    
+    length = len(parent_a)
+    if length < 2:
+        raise ValueError("Genomes must be at least 2 bits long")
+    
+    split = randint(1, length - 1)
+    return parent_a[0:split] + parent_b[split:], parent_b[0:split] + parent_a[split:]
 
+def mutate(genome):
+    pass
+
+def check_validity(genome):
+    if translate_genome(genome):
+        return True
+    return False
+
+def run_genetic_algorithm(generation_limit, fitness_limit):
+    population = generate_population(20)
+    
+    for i in range(generation_limit):
+        population = sorted(
+            population,
+            key=lambda genome: fitness(genome),
+            reverse=True
+        )
+
+        if fitness(population[0]) >= fitness_limit:
+            break
+
+        # elitisim
+        next_generation = population[0:2]
+
+        # we pick 2 parents and generate 2 children so we loop for half the length of a generation to get as many
+        # solutions in our next generation as before, we apply -1 because we saved our top 2 genomes
+
+        for j in range(int(len(population)/2) - 1):
+            parents = select_parents(population, fitness)
+            valid_children = False
+            while not valid_children:
+                offspring_a, offspring_b = crossover(parents[0], parents[1])
+                # offspring_a = mutate(offspring_a)
+                # offspring_b = mutate(offspring_b)
+                valid_children = check_validity(offspring_a) and check_validity(offspring_b)
+            print("Parent A: ")
+            print_translation(translate_genome(parents[0]))
+            print("------------------")
+            print("Parent B: ")
+            print_translation(translate_genome(parents[1]))
+            print("------------------")
+            print("Offspring A: ")
+            print_translation(translate_genome(offspring_a))
+            print("------------------")
+            print("Offspring B: ")
+            print_translation(translate_genome(offspring_b))
+            
+
+
+    
+run_genetic_algorithm(generation_limit=100, fitness_limit=25)
