@@ -33,14 +33,14 @@ timeslots = [timeslots_day for i in range(len(days))]
 # create a dictionary where all of the courses that a teacher teaches are stored
 professor_courses = {}
 for professor in dataset_professors['CODE']:
-    professor_code = str(professor)
-    # the lenght of the professor code has to be 6, if not, add 0's to the right
-    while len(professor_code) < 6:
-        professor_code += "0"
-    professor_courses[professor_code] = []
+    # professor_code = str(professor)
+    # # the lenght of the professor code has to be 6, if not, add 0's to the right
+    # while len(professor_code) < 6:
+    #     professor_code += "0"
+    professor_courses[professor] = []
     for index in range(len(dataset_subjectsPP)):
         if dataset_subjectsPP['PROFESSOR CODE'][index] == professor:
-            professor_courses[professor_code].append(dataset_subjectsPP['DISCIPLINA'][index])
+            professor_courses[professor].append(dataset_subjectsPP['DISCIPLINA'][index])
 
 
 def generate_bit_length(db_length):
@@ -110,10 +110,12 @@ def get_class_scheduling_count(translated_genome):
     for index_class in range(len(dataset_courseSchedule_semester)):
         nr_at = {}
         nr_ap = {}
+        nr_av = {}
 
         for class_group in class_groups:
             nr_at[class_group] = dataset_courseSchedule_semester['AT'][index_class]
             nr_ap[class_group] = dataset_courseSchedule_semester['AP'][index_class]
+            nr_av[class_group] = dataset_courseSchedule_semester['AV'][index_class]
 
         for class_scheduling in translated_genome:
             if class_scheduling['class'] == dataset_courseSchedule_semester['DISCIPLINA'][index_class] and class_scheduling['class_type'] == "AT":
@@ -122,13 +124,17 @@ def get_class_scheduling_count(translated_genome):
             if class_scheduling['class'] == dataset_courseSchedule_semester['DISCIPLINA'][index_class] and class_scheduling['class_type'] == "AP":
                 nr_ap[class_scheduling['class_group']] -= 1
 
+            if class_scheduling['class'] == dataset_courseSchedule_semester['DISCIPLINA'][index_class] and class_scheduling['class_type'] == "AV":
+                nr_av[class_scheduling['class_group']] -= 1
+
         # if the values in the dictionary are all 0, then the class is scheduled correctly
-        if all(value == 0 for value in nr_at.values()) and all(value == 0 for value in nr_ap.values()):
+        if all(value == 0 for value in nr_at.values()) and all(value == 0 for value in nr_ap.values()) and all(value == 0 for value in nr_av.values()):
             score += 1
-            print("class: ", dataset_courseSchedule_semester['DISCIPLINA'][index_class])
-            print("nr_at: ", nr_at)
-            print("nr_ap: ", nr_ap)
-            print("---------------------")
+            # print("class: ", dataset_courseSchedule_semester['DISCIPLINA'][index_class])
+            # print("nr_at: ", nr_at)
+            # print("nr_ap: ", nr_ap)
+            # print("nr_av: ", nr_av)
+            # print("---------------------")
 
     return score
 
@@ -143,6 +149,10 @@ def translate_genome(genome):
         timeslots_day_part_value = get_binary_value_class_scheduling_part(get_timeslot_day_part(class_scheduling))
         timeslots_part_value = get_binary_value_class_scheduling_part(get_timeslot_part(class_scheduling))
 
+        # if the et value of the class_part_value in the dataset is 4 or more, then the value is always 0
+        if dataset_courseSchedule_semester['ET'][class_part_value] >= 4:
+            class_group_part = 0
+
         class_part_translation = dataset_courseSchedule_semester['DISCIPLINA'][class_part_value]
         class_type_translation = class_types[class_type_part]
         class_group_translation = class_groups[class_group_part]
@@ -151,7 +161,7 @@ def translate_genome(genome):
         timeslots_part_translation = timeslots_day[timeslots_part_value]
 
         # return the translated data of the genome in a dictionary
-        translation.append({"class": class_part_translation,"class_type":class_type_translation,"class_group":class_group_translation,"professor": professor_part_translation, "timeslot_day": timeslots_day_part_translation, "timeslot": timeslots_part_translation})
+        translation.append({"class": class_part_translation,"class_type":class_type_translation,"class_group":class_group_translation,"professor": professor_part_translation, "timeslot_day": timeslots_day_part_translation, "timeslot": timeslots_part_translation, "et": dataset_courseSchedule_semester['ET'][class_part_value]})
         # sort the translation by timeslot_day and timeslot
         translation = sorted(translation, key=lambda k: (k['timeslot_day'], k['timeslot']))
         
@@ -167,7 +177,11 @@ def translate_genome_to_hex(genome):
         timeslots_day_part_value = get_binary_value_class_scheduling_part(get_timeslot_day_part(class_scheduling))
         timeslots_part_value = get_binary_value_class_scheduling_part(get_timeslot_part(class_scheduling))
 
-        translation.append({"class": class_part_value,"class_type":class_type_part,"class_group":class_group_part,"professor": professor_part_value, "timeslot_day": timeslots_day_part_value, "timeslot": timeslots_part_value})
+        # if the et value of the class_part_value in the dataset is 4 or more, then the value is always 0
+        if dataset_courseSchedule_semester['ET'][class_part_value] >= 4:
+            class_group_part = 0
+
+        translation.append({"class": class_part_value,"class_type":class_type_part,"class_group":class_group_part,"professor": professor_part_value, "timeslot_day": timeslots_day_part_value, "timeslot": timeslots_part_value, "et": dataset_courseSchedule_semester['ET'][class_part_value]})
 
     # sort the translation based on the timeslot_day and timeslot
     translation = sorted(translation, key=lambda k: (k['timeslot_day'], k['timeslot']))
@@ -203,12 +217,26 @@ def check_100_rule(hex_genome):
             for index_timeslot in range(len(timeslots_day)):
                 if classes_day[i]['timeslot'] == index_timeslot and classes_day[i+1]['timeslot'] == index_timeslot + 1:
                     if classes_day[i]['class'] == classes_day[i+1]['class'] and classes_day[i]['class_type'] == classes_day[i+1]['class_type'] and classes_day[i]['class_group'] == classes_day[i+1]['class_group'] and classes_day[i]['professor'] == classes_day[i+1]['professor']:
-                        print("Great! 2 of the same classes are being taught on successive timeslots!")
-                        print("classes_day[i]: ", classes_day[i])
-                        print("classes_day[i+1]: ", classes_day[i+1])
-                        print("------------------")
+                        # print("Great! 2 of the same classes are being taught on successive timeslots!")
+                        # print("classes_day[i]: ", classes_day[i])
+                        # print("classes_day[i+1]: ", classes_day[i+1])
+                        # print("------------------")
                         score += 1
     return score
+
+def check_professor_scheduling(translated_genome):
+    score = 0
+    for class_scheduling in translated_genome:
+        for professor in professor_courses:
+            class_name = class_scheduling['class'][:5]
+            if class_name in professor_courses[professor]:
+                if class_scheduling['professor'] == professor:
+                    score += 1
+                    # print("Great! The professor is teaching the class!")
+                    # print("class_scheduling: ", class_scheduling)
+                    # print("------------------")
+    return score
+                    
 
 def schedule_at(hex_genome):
     score = 0
@@ -222,14 +250,16 @@ def schedule_at(hex_genome):
                     for j in range(i + 1, len(classes_day_timeslot)):
                         if classes_day_timeslot[i]['class'] == classes_day_timeslot[j]['class']:
                             if classes_day_timeslot[i]['class_type'] == classes_day_timeslot[j]['class_type'] and classes_day_timeslot[i]['class_type'] == 0 and classes_day_timeslot[i]['class_group'] != classes_day_timeslot[j]['class_group'] and classes_day_timeslot[i]['professor'] == classes_day_timeslot[j]['professor']:
-                                print("Correctly scheduled AT class")
-                                print(classes_day_timeslot[i])
-                                print(classes_day_timeslot[j])
-                                print("------------------")
+                                # print("Correctly scheduled AT class")
+                                # print(classes_day_timeslot[i])
+                                # print(classes_day_timeslot[j])
+                                # print("------------------")
                                 score += 1
     return score
 
 def print_translation(translation):
+    # sort the translation based on the et value
+    translation = sorted(translation, key=lambda k: (k['et']))
     for class_scheduling in translation:
         print(class_scheduling)
 
@@ -241,11 +271,12 @@ def fitness(genome):
     score_schedule_at = schedule_at(hex_genome)
     score_emergency_saturday_class = emergency_saturday_class(hex_genome)
     score_class_scheduling_count = get_class_scheduling_count(translation)
+    score_professor_scheduling = check_professor_scheduling(translation)
 
-    total_score = score_100_rule + score_schedule_at + score_emergency_saturday_class + score_class_scheduling_count
-    return {"total_score": total_score, "score_100_rule": score_100_rule, "score_schedule_at": score_schedule_at, "score_emergency_saturday_class": score_emergency_saturday_class, "score_class_scheduling_count": score_class_scheduling_count}
+    total_score = score_100_rule + score_schedule_at + score_emergency_saturday_class + score_class_scheduling_count + score_professor_scheduling
+    return {"total_score": total_score, "score_100_rule": score_100_rule, "score_schedule_at": score_schedule_at, "score_emergency_saturday_class": score_emergency_saturday_class, "score_class_scheduling_count": score_class_scheduling_count, "score_professor_scheduling": score_professor_scheduling}
     
-dataset_courseSchedule_semester = dataset_courseSchedule_semester_uneven
+dataset_courseSchedule_semester = dataset_courseSchedule_semester_even
 # reindex the database
 dataset_courseSchedule_semester = dataset_courseSchedule_semester.reset_index(drop=True)
 len_classes_encoding = generate_bit_length(len(dataset_courseSchedule_semester))
@@ -264,13 +295,14 @@ def run_genetic_algorithm():
         # print_translation(translation)
         # done = True # Debugging purposes
         fitness_genome = fitness(genome)
-        if fitness_genome['score_class_scheduling_count'] > 0:
+        if fitness_genome['score_100_rule'] > 0:
             done = True
             print_translation(translation)
             print("Score_100_rule: ", fitness_genome['score_100_rule'])
             print("Score_schedule_at: ", fitness_genome['score_schedule_at'])
             print("Score_emergency_saturday_class: ", fitness_genome['score_emergency_saturday_class'])
             print("Score_class_scheduling_count: ", fitness_genome['score_class_scheduling_count'])
-
+            print("Score_professor_scheduling: ", fitness_genome['score_professor_scheduling'])
 
 run_genetic_algorithm()
+

@@ -1,8 +1,5 @@
 PRIORITY:
 - Keep in mind that teacher can only be scheduled to teach a class on a given timeslot when they are available to teach that class.
-- The number of classes in a week should correspond with the AT and AP number. --> dynamic programming regarding the class_types!!
-- A qualified teacher has to be assigned for a specific course
-- Only 1 turma starting from etapa 4
 
 EXTRA:
 - AP classes should be seperated.
