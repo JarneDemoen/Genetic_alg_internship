@@ -7,7 +7,7 @@ import os
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Inputs user
-semester = "uneven"
+semester = "even"
 timeslots_day = [
     "19:00-19:50",
     "19:50-20:40",
@@ -90,7 +90,7 @@ def get_timeslot_day_part(class_scheduling):
 def get_timeslot_part(class_scheduling):
     return class_scheduling[len_classes_encoding+len_class_types_encoding+len_class_groups_encoding+len_professors_encoding+len_timeslots_day_encoding:]
         
-def translate_genome(genome, hex_, string_):
+def translate_genome(genome, hex_= False, string_= False):
     translation_string = []
     translation_hex = []
     for class_scheduling in genome:
@@ -174,8 +174,8 @@ def generate_population(population_size):
 def run_genetic_algorithm(generation_limit, fitness_limit):
     # population = generate_population(20)
     test_genome = generate_genome(genome_size)
-    translated_genome_string = translate_genome(test_genome, False, True)
-    translated_genome_hex = translate_genome(test_genome, True, False)
+    translated_genome_string = translate_genome(test_genome, string_=True)
+    translated_genome_hex = translate_genome(test_genome, hex_=True)
     print('Translated genome string:')
     print_translation(translated_genome_string)
     print('Translated genome hex:')
