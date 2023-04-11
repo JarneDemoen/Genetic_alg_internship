@@ -1,15 +1,13 @@
- - Understanding the course schedule and the schedule of the teachers
- - Converting the physical documents into excel data and converting it into a csv file for the program to read
- - Creation of a genome by generating a list of binary numbers and then translating the binary code to actual teachers, subjects...
- - Implemented the constraints in the fitness function
+- Check if the genome generates schedules enough classes according to the number of class groups
+- rewrite the code to make it more readable
  
  Constraints:
-- All classes should be scheduled for 2 or 4 hours straight, with the same variables = check_100_rule
-- AT classes should be scheduled together on the same timeslot with the same professor = schedule_at
-- You can schedule courses on Saturday but only in emergency cases
-- The number of classes in a week should correspond with the AT, AP and AV number.
-- A qualified teacher has to be assigned for a specific course
-- Only 1 turma starting from etapa 4
+- All classes should be scheduled for 2 or 4 hours straight, with the same variables = OK
+- AT classes should be scheduled together on the same timeslot with the same professor = OK
+- You can schedule courses on Saturday but only in emergency cases = OK
+- The number of classes in a week should correspond with the AT, AP and AV number = OK
+- A qualified teacher has to be assigned for a specific course = OK
+- Only 1 turma starting from etapa 4 = OK
 
 
 
