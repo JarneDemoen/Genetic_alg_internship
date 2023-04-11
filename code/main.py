@@ -102,7 +102,7 @@ def translate_genome(genome, hex_, string_):
         timeslot_index = get_hex_value(get_timeslot_part(class_scheduling))
 
         if dataset_courseSchedule_semester['ET'][class_index] >= 4:
-            class_type_index = 0
+            class_group_index = 0
 
         if hex_:
             translation_hex.append({'class:': class_index, 'class_type': class_type_index, 'class_group': class_group_index, 'professor': professor_index, 'timeslot_day': timeslot_day_index, 'timeslot': timeslot_index, 'et': dataset_courseSchedule_semester['ET'][class_index]})
