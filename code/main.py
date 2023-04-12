@@ -158,7 +158,7 @@ def create_genome_part():
     genome = binary_class + binary_class_type + binary_class_group + binary_professor + binary_timeslot_day + binary_timeslot
     return genome
 
-def print_translation(translation):
+def print_per_line(translation):
     for class_scheduling in translation:
         print(class_scheduling)
 
@@ -171,14 +171,49 @@ def generate_population(population_size):
         population.append(generate_genome(genome_size))
     return population
 
+def check_100_rule(genome):
+    violations = 0
+    for day in days:
+        classes_day = [class_scheduling for class_scheduling in genome if class_scheduling['timeslot_day'] == day]
+        if len(classes_day) == 0:
+            continue
+        for index_timeslot in range(len(timeslots_day) - 1):
+            for index_class_day in range(len(classes_day) - 1):
+                # check if there is a class scheduled on the first timeslot of the day
+                if classes_day[index_class_day]['timeslot'] == timeslots_day[0]:
+                    # check if there is a class scheduled on the next timeslot, if not, there is a violation
+                    if classes_day[index_class_day + 1] != timeslots_day[1]:
+                        violations += 1
+                        print(f"Class {classes_day[index_class_day]} is scheduled at the first timeslot of the day and there is no class scheduled on the next timeslot")
+                
+                # check if there is a class scheduled on the last timeslot of the day
+                if classes_day[index_class_day]['timeslot'] == timeslots_day[-1]:
+                    # check if there is a class scheduled on the previous timeslot, if not, there is a violation
+                    if classes_day[index_class_day - 1] != timeslots_day[-2]:
+                        violations += 1
+                        print(f"Class {classes_day[index_class_day]} is scheduled at the last timeslot of the day and there is no class scheduled on the previous timeslot")
+                
+                if index_class_day != 0:
+                    if classes_day[index_class_day - 1] != timeslots_day[index_timeslot - 1] and classes_day[index_class_day + 1] != timeslots_day[index_timeslot + 1]:
+                        violations += 1   
+                        print("There is no class scheduled at the previous and next timeslot of class ", classes_day[index_class_day])
+
+        
+
+    return violations
+            
+
+def calculate_fitness_score(genome):
+    translated_genome = translate_genome(genome, string_=True)
+    violations_100_rule = check_100_rule(translated_genome)
+    print("Violations 100 rule: ", violations_100_rule)
+
 def run_genetic_algorithm(generation_limit, fitness_limit):
     # population = generate_population(20)
-    test_genome = generate_genome(genome_size)
-    translated_genome_string = translate_genome(test_genome, string_=True)
-    translated_genome_hex = translate_genome(test_genome, hex_=True)
-    print('Translated genome string:')
-    print_translation(translated_genome_string)
-    print('Translated genome hex:')
-    print_translation(translated_genome_hex)
+    genome = generate_genome(genome_size)
+    translation = translate_genome(genome, string_=True)
+    fitness_score = calculate_fitness_score(genome)
+    print_per_line(translation)
+    print(dataset_courseSchedule_semester)
 
 run_genetic_algorithm(generation_limit=100, fitness_limit=25)

@@ -3,7 +3,9 @@ PRIORITY:
 - Adapt the way of implementing the score --> maybe make use of the 1/(1+c) function with C is the number of violations of the constraints
 - Keep in mind that teacher can only be scheduled to teach a class on a given timeslot when they are available to teach that class.
 
+
 EXTRA:
+- With the consecutive scheduled courses, make sure they are not scheduled before and right after the lunch or diner break
 - AP classes should be seperated.
 - Make sure the classes are not spread too much. For example if a class is given from 8am until 10pm and another class is scheduled 
 that day, it would be better to schedule it from 10am until 12am rather than scheduling that last course at night from 7pm until 9pm.
