@@ -327,7 +327,7 @@ def calculate_fitness_score(genome):
     violations_assingning_professor = get_violation_count_assigning_professor(translated_genome)
     violations_class_scheduling_count = get_violation_count_class_scheduling(translated_genome)
     violations_saturday_classes = get_violation_count_saturday_classes(translated_genome)
-    violations_consecutive_classes = get_violation_count_consecutive_classes(hex_genome)
+    # violations_consecutive_classes = get_violation_count_consecutive_classes(hex_genome)
     violations_availability_professor = get_violation_count_professor_availability(translated_genome)
 
     # print("Violations assingning professor: ", violations_assingning_professor)
@@ -336,7 +336,7 @@ def calculate_fitness_score(genome):
     # print("Violation consecutive classes: ", violations_consecutive_classes)
     # print("Violation professor availability: ", violations_availability_professor)
 
-    total_violations = violations_assingning_professor + violations_class_scheduling_count + violations_saturday_classes + violations_consecutive_classes + violations_availability_professor
+    total_violations = violations_assingning_professor + violations_class_scheduling_count + violations_saturday_classes + violations_availability_professor
     return 1/(1+total_violations)
 
 def select_parents(population, fitness):
