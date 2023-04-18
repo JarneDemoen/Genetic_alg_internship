@@ -359,41 +359,41 @@ def run_genetic_algorithm(generation_limit, fitness_limit):
     print_translation(translation)
     print("Fitness: ", fitness(population[0]))
     
-    # for i in range(generation_limit):
-    #     population = sorted(
-    #         population,
-    #         key=lambda genome: fitness(genome),
-    #         reverse=True
-    #     )
+    for i in range(generation_limit):
+        population = sorted(
+            population,
+            key=lambda genome: fitness(genome),
+            reverse=True
+        )
         
-        # if fitness(population[0]) >= fitness_limit:
-        #     break
+        if fitness(population[0]) >= fitness_limit:
+            break
         
-        # # elitisim
-        # next_generation = population[0:2]
+        # elitisim
+        next_generation = population[0:2]
 
-        # # we pick 2 parents and generate 2 children so we loop for half the length of a generation to get as many
-        # # solutions in our next generation as before, we apply -1 because we saved our top 2 genomes
+        # we pick 2 parents and generate 2 children so we loop for half the length of a generation to get as many
+        # solutions in our next generation as before, we apply -1 because we saved our top 2 genomes
 
-        # for j in range(int(len(population)/2) - 1):
-        #     parents = select_parents(population, fitness)
-        #     valid_children = False
-        #     while not valid_children:
-        #         offspring_a, offspring_b = crossover(parents[0], parents[1])
-        #         # offspring_a = mutate(offspring_a)
-        #         # offspring_b = mutate(offspring_b)
-        #         valid_children = check_validity(offspring_a) and check_validity(offspring_b)
-        #     print("Parent A: ")
-        #     print_translation(translate_genome(parents[0]))
-        #     print("------------------")
-        #     print("Parent B: ")
-        #     print_translation(translate_genome(parents[1]))
-        #     print("------------------")
-        #     print("Offspring A: ")
-        #     print_translation(translate_genome(offspring_a))
-        #     print("------------------")
-        #     print("Offspring B: ")
-        #     print_translation(translate_genome(offspring_b))
+        for j in range(int(len(population)/2) - 1):
+            parents = select_parents(population, fitness)
+            valid_children = False
+            while not valid_children:
+                offspring_a, offspring_b = crossover(parents[0], parents[1])
+                # offspring_a = mutate(offspring_a)
+                # offspring_b = mutate(offspring_b)
+                valid_children = check_validity(offspring_a) and check_validity(offspring_b)
+            print("Parent A: ")
+            print_translation(translate_genome(parents[0]))
+            print("------------------")
+            print("Parent B: ")
+            print_translation(translate_genome(parents[1]))
+            print("------------------")
+            print("Offspring A: ")
+            print_translation(translate_genome(offspring_a))
+            print("------------------")
+            print("Offspring B: ")
+            print_translation(translate_genome(offspring_b))
             
 
 

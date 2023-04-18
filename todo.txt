@@ -1,7 +1,7 @@
 PRIORITY:
 - Implement a function that will check if a newly generated child or mutation is still valid
-- Adapt the way of implementing the score --> maybe make use of the 1/(1+c) function with C is the number of violations of the constraints
-- Keep in mind that teacher can only be scheduled to teach a class on a given timeslot when they are available to teach that class.
+- Change the consecutive scheduling to a more efficient algorithm, if classes are given on the same timeslot they don't have to be equal, 
+just check conflicts! If classes are the same you can check on class group and class type, otherwise just check conflicts
 
 
 EXTRA:
