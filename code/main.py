@@ -377,8 +377,25 @@ def validate_genome(genome):
 
     
 def mutate(genome):
-    
-                    
+    print("Mutation of genome")
+    nr_mutations = randint(1, 0.05*len(genome))
+    print("Number of mutations: ", nr_mutations)
+    for i in range(nr_mutations):
+        valid_mutation = False
+        while valid_mutation == False:
+            class_scheduling_index = randint(0, len(genome) - 1)
+            random_bit_index = randint(0,len(genome[class_scheduling_index]) - 1)
+            print("Before mutation: ", translate_genome(genome, string_=True)[class_scheduling_index])
+            genome[class_scheduling_index][random_bit_index] = 1 - genome[class_scheduling_index][random_bit_index]
+            valid_mutation = validate_genome(genome)
+            if valid_mutation == False:
+                print("Invalid mutation")
+                genome[class_scheduling_index][random_bit_index] = 1 - genome[class_scheduling_index][random_bit_index]
+            else:
+                print("After mutation: ", translate_genome(genome, string_=True)[class_scheduling_index])
+                # print("Valid mutation")
+                x = 1
+
     return genome
 
 def run_genetic_algorithm(generation_limit, fitness_limit):
@@ -404,17 +421,10 @@ def run_genetic_algorithm(generation_limit, fitness_limit):
         for j in range(int(len(population)/2) - 1):
             parents = select_parents(population, calculate_fitness_score)
             offspring_a, offspring_b = crossover(parents[0], parents[1])
-            mutated_offspring_a = mutate(offspring_a) 
-            mutated_offspring_b = mutate(offspring_b)    
-           
-            print("Offspring_a: ")
-            print_per_line(translate_genome(offspring_a, string_=True))
-            print("Mutation offspring_a:")
-            print_per_line(translate_genome(mutated_offspring_a, string_=True))
-            print("Offspring_b: ")
-            print_per_line(translate_genome(offspring_b, string_=True))
-            print("Mutation offspring_b:")
-            print_per_line(translate_genome(mutated_offspring_b, string_=True))
+
+            offspring_a = mutate(offspring_a) 
+            offspring_b = mutate(offspring_b)  
+
             break
         break
                 
