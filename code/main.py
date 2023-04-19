@@ -1,4 +1,5 @@
 # imports
+import random
 import pandas as pd
 from random import choices, randint
 import os
@@ -99,7 +100,8 @@ def get_timeslot_day_part(class_scheduling):
 def get_timeslot_part(class_scheduling):
     return class_scheduling[len_classes_encoding+len_class_types_encoding+len_class_groups_encoding+len_professors_encoding+len_timeslots_day_encoding:]
         
-def translate_genome(genome, hex_= False, string_= False, time_order = False):
+def translate_genome(genome, hex_= False, string_= False, chronological = False):
+    
     translation_string = []
     translation_hex = []
     for class_scheduling in genome:
@@ -110,12 +112,15 @@ def translate_genome(genome, hex_= False, string_= False, time_order = False):
         timeslot_day_index = get_hex_value(get_timeslot_day_part(class_scheduling))
         timeslot_index = get_hex_value(get_timeslot_part(class_scheduling))
 
+        if class_index >= len(dataset_courseSchedule_semester) or class_type_index >= len(class_types) or class_group_index >= len(class_groups) or professor_index >= len(dataset_professors) or timeslot_day_index >= len(days) or timeslot_index >= len(timeslots_per_day):
+            return False
+
         if dataset_courseSchedule_semester['ET'][class_index] >= 4:
             class_group_index = 0
 
         if hex_:
             translation_hex.append({'class': class_index, 'class_type': class_type_index, 'class_group': class_group_index, 'professor': professor_index, 'timeslot_day': timeslot_day_index, 'timeslot': timeslot_index, 'et': dataset_courseSchedule_semester['ET'][class_index]})
-            if time_order:
+            if chronological:
                 translation_hex = sorted(translation_hex, key=lambda k: (k['timeslot_day'], k['timeslot']))
 
         elif string_:
@@ -128,14 +133,15 @@ def translate_genome(genome, hex_= False, string_= False, time_order = False):
 
             translation_string.append({'class': class_translation, 'class_type': class_type_translation, 'class_group': class_groups_translation, 'professor': professor_translation, 'timeslot_day': timeslot_day_translation, 'timeslot': timeslot_translation, 'et': dataset_courseSchedule_semester['ET'][class_index]})
             
-            if time_order:
+            if chronological:
                 translation_string = sorted(translation_string, key=lambda k: (days.index(k['timeslot_day']), k['timeslot']))
             
     if hex_:
         return translation_hex
     if string_:
         return translation_string
-
+        
+    
         
 dataset_courseSchedule_semester = dataset_courseSchedule_semester.reset_index(drop=True)
 len_classes_encoding = generate_bit_length(len(dataset_courseSchedule_semester))
@@ -321,8 +327,8 @@ def get_violation_count_professor_availability(genome):
             
 
 def calculate_fitness_score(genome):
-    translated_genome = translate_genome(genome, string_=True, time_order=True)
-    hex_genome = translate_genome(genome, hex_=True, time_order=True)
+    translated_genome = translate_genome(genome, string_=True, chronological=True)
+    hex_genome = translate_genome(genome, hex_=True, chronological=True)
 
     violations_assingning_professor = get_violation_count_assigning_professor(translated_genome)
     violations_class_scheduling_count = get_violation_count_class_scheduling(translated_genome)
@@ -364,14 +370,16 @@ def crossover(parent_a, parent_b):
     return offspring_a, offspring_b
 
 def validate_genome(genome):
-    if translate_genome(genome, string_=True):
-        translation = translate_genome(genome, string_=True)
-        print("Valid genome: ")
-        print_per_line(translation)
-        return True
-    else:
-        print("Invalid genome")
+    translation = translate_genome(genome, string_=True)
+    if translation == False:
         return False
+    return True
+
+    
+def mutate(genome):
+    
+                    
+    return genome
 
 def run_genetic_algorithm(generation_limit, fitness_limit):
     population = generate_population(20)
@@ -395,8 +403,18 @@ def run_genetic_algorithm(generation_limit, fitness_limit):
 
         for j in range(int(len(population)/2) - 1):
             parents = select_parents(population, calculate_fitness_score)
-            valid_children = False
             offspring_a, offspring_b = crossover(parents[0], parents[1])
+            mutated_offspring_a = mutate(offspring_a) 
+            mutated_offspring_b = mutate(offspring_b)    
+           
+            print("Offspring_a: ")
+            print_per_line(translate_genome(offspring_a, string_=True))
+            print("Mutation offspring_a:")
+            print_per_line(translate_genome(mutated_offspring_a, string_=True))
+            print("Offspring_b: ")
+            print_per_line(translate_genome(offspring_b, string_=True))
+            print("Mutation offspring_b:")
+            print_per_line(translate_genome(mutated_offspring_b, string_=True))
             break
         break
                 

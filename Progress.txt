@@ -1,6 +1,6 @@
 - Check if the genome generates schedules enough classes according to the number of class groups
 - rewrite the code to make it more readable
- 
+- Implement a function that will check if a newly generated child or mutation is still valid
  Constraints:
 - All classes should be scheduled for 2 or 4 hours straight, with the same variables = OK
 - AT classes should be scheduled together on the same timeslot with the same professor = OK
