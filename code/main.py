@@ -3,6 +3,7 @@ import random
 import pandas as pd
 from random import choices, randint
 import os
+import time
 
 # making sure the file is in the same directory as the script
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -331,10 +332,10 @@ def calculate_fitness_score(genome):
     hex_genome = translate_genome(genome, hex_=True, chronological=True)
 
     violations_assingning_professor = get_violation_count_assigning_professor(translated_genome)
-    violations_class_scheduling_count = get_violation_count_class_scheduling(translated_genome)
-    violations_saturday_classes = get_violation_count_saturday_classes(translated_genome)
+    # violations_class_scheduling_count = get_violation_count_class_scheduling(translated_genome)
+    # violations_saturday_classes = get_violation_count_saturday_classes(translated_genome)
     # violations_consecutive_classes = get_violation_count_consecutive_classes(hex_genome)
-    violations_availability_professor = get_violation_count_professor_availability(translated_genome)
+    # violations_availability_professor = get_violation_count_professor_availability(translated_genome)
 
     # print("Violations assingning professor: ", violations_assingning_professor)
     # print("Violation class scheduling count: ", violations_class_scheduling_count)
@@ -342,8 +343,8 @@ def calculate_fitness_score(genome):
     # print("Violation consecutive classes: ", violations_consecutive_classes)
     # print("Violation professor availability: ", violations_availability_professor)
 
-    total_violations = violations_assingning_professor + violations_class_scheduling_count + violations_saturday_classes + violations_availability_professor
-    return 1/(1+total_violations)
+    # total_violations = violations_assingning_professor + violations_class_scheduling_count + violations_saturday_classes + violations_availability_professor
+    return 1/(1+violations_assingning_professor)
 
 def select_parents(population, fitness):
     return choices(
@@ -375,31 +376,48 @@ def validate_genome(genome):
         return False
     return True
 
-    
 def mutate(genome):
-    print("Mutation of genome")
+    p = 0.98
+    for index_class_scheduling in range(len(genome)):
+        for index_bit in range(len(genome[index_class_scheduling])):
+            valid_mutation = False
+            if random.random() >= p:
+                # print("Before mutation: ", translate_genome(genome, string_=True)[index_class_scheduling])
+                genome[index_class_scheduling][index_bit] = 1 - genome[index_class_scheduling][index_bit]
+                valid_mutation = validate_genome(genome)
+                if valid_mutation == False:
+                    genome[index_class_scheduling][index_bit] = 1 - genome[index_class_scheduling][index_bit]
+                    # print("Invalid mutation")
+                else:
+                    # print("After mutation: ", translate_genome(genome, string_=True)[index_class_scheduling])
+                    pass
+    return genome
+
+
+    
+def mutate_alternative(genome):
+    # print("Mutation of genome")
     nr_mutations = randint(1, 0.05*len(genome))
-    print("Number of mutations: ", nr_mutations)
+    # print("Number of mutations: ", nr_mutations)
     for i in range(nr_mutations):
         valid_mutation = False
         while valid_mutation == False:
             class_scheduling_index = randint(0, len(genome) - 1)
             random_bit_index = randint(0,len(genome[class_scheduling_index]) - 1)
-            print("Before mutation: ", translate_genome(genome, string_=True)[class_scheduling_index])
+            # print("Before mutation: ", translate_genome(genome, string_=True)[class_scheduling_index])
             genome[class_scheduling_index][random_bit_index] = 1 - genome[class_scheduling_index][random_bit_index]
             valid_mutation = validate_genome(genome)
             if valid_mutation == False:
-                print("Invalid mutation")
+                # print("Invalid mutation")
                 genome[class_scheduling_index][random_bit_index] = 1 - genome[class_scheduling_index][random_bit_index]
             else:
-                print("After mutation: ", translate_genome(genome, string_=True)[class_scheduling_index])
-                # print("Valid mutation")
-                x = 1
+                # print("After mutation: ", translate_genome(genome, string_=True)[class_scheduling_index])
+                pass
 
     return genome
 
-def run_genetic_algorithm(generation_limit, fitness_limit):
-    population = generate_population(20)
+def run_genetic_algorithm(generation_limit, fitness_limit, population_size):
+    population = generate_population(population_size=population_size)
     # genome = population[0]
     # translation = translate_genome(genome, string_=True)
     # print_per_line(translation)
@@ -408,9 +426,10 @@ def run_genetic_algorithm(generation_limit, fitness_limit):
 
     for i in range(generation_limit):
         population = sorted(population, key=lambda genome: calculate_fitness_score(genome), reverse=True)
-
+        print("Generation: ", i)
         if calculate_fitness_score(population[0]) >= fitness_limit:
             break
+        print("Best fitness score: ", calculate_fitness_score(population[0]))
 
         # elitism
         next_generation = population[0:2]
@@ -421,14 +440,32 @@ def run_genetic_algorithm(generation_limit, fitness_limit):
         for j in range(int(len(population)/2) - 1):
             parents = select_parents(population, calculate_fitness_score)
             offspring_a, offspring_b = crossover(parents[0], parents[1])
-
+            # print("Offspring a: ")
+            # print_per_line(translate_genome(offspring_a, string_=True))
+            # print("Offspring b: ")
+            # print_per_line(translate_genome(offspring_b, string_=True))
+            
             offspring_a = mutate(offspring_a) 
             offspring_b = mutate(offspring_b)  
+            # print("Offspring a after mutation: ")
+            # print_per_line(translate_genome(offspring_a, string_=True))
+            # print("Offspring b after mutation: ")
+            # print_per_line(translate_genome(offspring_b, string_=True))
+            next_generation += [offspring_a, offspring_b]
+        
+        population = next_generation
 
-            break
-        break
-                
-                
+    population = sorted(population, key=lambda genome: calculate_fitness_score(genome), reverse=True)
 
+    return population, i
 
-run_genetic_algorithm(generation_limit=100, fitness_limit=25)
+start = time.time()
+
+population, generations = run_genetic_algorithm(generation_limit=100, fitness_limit=1,population_size=100)
+
+end = time.time()
+
+print(f"Number of generations: {generations}")
+print(f"Time: {end - start}")
+print(f"Best solution: ")
+print_per_line(translate_genome(population[0], string_=True, chronological=True))
