@@ -204,6 +204,7 @@ def get_violation_count_assigning_professor(genome):
 
     return violations
 
+
 def get_violation_count_class_scheduling(genome):
     violations = 0
     for index_class in range(len(dataset_courseSchedule_semester)):
@@ -247,6 +248,7 @@ def get_violation_count_class_scheduling(genome):
         # print("Violations: ", violations)
         # print("")
     return violations
+
 
 def get_violation_count_saturday_classes(genome):
     violations = 0
@@ -343,8 +345,8 @@ def calculate_fitness_score(genome):
     # print("Violation consecutive classes: ", violations_consecutive_classes)
     # print("Violation professor availability: ", violations_availability_professor)
 
-    # total_violations = violations_assingning_professor + violations_class_scheduling_count + violations_saturday_classes + violations_availability_professor
-    return 1/(1+violations_assingning_professor)
+    total_violations = violations_assingning_professor #+ violations_class_scheduling_count + violations_saturday_classes + violations_consecutive_classes + violations_availability_professor
+    return 1/(1+total_violations)
 
 def select_parents(population, fitness):
     return choices(
@@ -352,6 +354,24 @@ def select_parents(population, fitness):
         weights=[fitness(genome) for genome in population],
         k=2
     )
+
+def crossover_alternative(parent_a, parent_b):
+    offspring_a = []
+    offspring_b = []
+
+    for index_class_scheduling in range(len(parent_a)):
+        offspring_schedule_a = []
+        offspring_schedule_b = []
+        genome_parts = [get_class_part,get_class_type_part,get_class_group_part,get_professor_part,get_timeslot_day_part,get_timeslot_part]
+        split_index = random.randint(0, len(genome_parts) - 1)
+        for i in range(split_index):
+            offspring_schedule_a.append(genome_parts[i](parent_a[index_class_scheduling]))
+            offspring_schedule_b.append(genome_parts[len(genome_parts) - 1 - i](parent_b[index_class_scheduling]))
+            # rest for later, think about it
+            
+            
+            
+
 
 def crossover(parent_a, parent_b):
     # for the crossover function we use a single-point crossover
@@ -377,11 +397,13 @@ def validate_genome(genome):
     return True
 
 def mutate(genome):
-    p = 0.98
+    p = 0.993
+    mutations = 0
     for index_class_scheduling in range(len(genome)):
         for index_bit in range(len(genome[index_class_scheduling])):
             valid_mutation = False
             if random.random() >= p:
+                mutations += 1
                 # print("Before mutation: ", translate_genome(genome, string_=True)[index_class_scheduling])
                 genome[index_class_scheduling][index_bit] = 1 - genome[index_class_scheduling][index_bit]
                 valid_mutation = validate_genome(genome)
@@ -393,8 +415,6 @@ def mutate(genome):
                     pass
     return genome
 
-
-    
 def mutate_alternative(genome):
     # print("Mutation of genome")
     nr_mutations = randint(1, 0.05*len(genome))
@@ -439,7 +459,7 @@ def run_genetic_algorithm(generation_limit, fitness_limit, population_size):
 
         for j in range(int(len(population)/2) - 1):
             parents = select_parents(population, calculate_fitness_score)
-            offspring_a, offspring_b = crossover(parents[0], parents[1])
+            offspring_a, offspring_b = crossover_alternative(parents[0], parents[1])
             # print("Offspring a: ")
             # print_per_line(translate_genome(offspring_a, string_=True))
             # print("Offspring b: ")
@@ -452,7 +472,6 @@ def run_genetic_algorithm(generation_limit, fitness_limit, population_size):
             # print("Offspring b after mutation: ")
             # print_per_line(translate_genome(offspring_b, string_=True))
             next_generation += [offspring_a, offspring_b]
-        
         population = next_generation
 
     population = sorted(population, key=lambda genome: calculate_fitness_score(genome), reverse=True)
@@ -461,7 +480,7 @@ def run_genetic_algorithm(generation_limit, fitness_limit, population_size):
 
 start = time.time()
 
-population, generations = run_genetic_algorithm(generation_limit=100, fitness_limit=1,population_size=100)
+population, generations = run_genetic_algorithm(generation_limit=100, fitness_limit=1000,population_size=20)
 
 end = time.time()
 

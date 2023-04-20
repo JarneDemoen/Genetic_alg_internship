@@ -39,6 +39,7 @@ def generate_genome(length: int) -> Genome:
     return choices([0,1], k=length)
 
 def generate_population(size: int, genome_length: int) -> Population:
+    print("Generating population...")
     return [generate_genome(genome_length) for _ in range(size)]
 
 def fitness(genome: Genome, things: List[Thing], weight_limit: int) -> int:

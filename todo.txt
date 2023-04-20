@@ -1,4 +1,5 @@
 PRIORITY:
+- Make sure whatever binary code I modify, it is valid, so change the encoding and decoding of the genome
 - Change mutation function so that each bit has a probability to be flipped of 5%
 - Change the consecutive scheduling to a more efficient algorithm, if classes are given on the same timeslot they don't have to be equal, 
 just check conflicts! If classes are the same you can check on class group and class type, otherwise just check conflicts
