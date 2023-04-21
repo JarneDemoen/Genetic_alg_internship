@@ -358,21 +358,44 @@ def select_parents(population, fitness):
 def crossover_alternative(parent_a, parent_b):
     offspring_a = []
     offspring_b = []
+    translation_parent_a = translate_genome(parent_a, string_=True, chronological=False)
+    translation_parent_b = translate_genome(parent_b, string_=True, chronological=False)
 
     for index_class_scheduling in range(len(parent_a)):
         offspring_schedule_a = []
         offspring_schedule_b = []
         genome_parts = [get_class_part,get_class_type_part,get_class_group_part,get_professor_part,get_timeslot_day_part,get_timeslot_part]
-        split_index = random.randint(0, len(genome_parts) - 1)
-        for i in range(split_index):
+        split_index = random.randint(0, len(genome_parts) - 2)
+        split_index = 4
+        # print("Before crossover:")
+        # print("ParentPart A:")
+        # print(translation_parent_a[index_class_scheduling])
+        # print("ParentPart B:")
+        # print(translation_parent_b[index_class_scheduling])
+        # print("Split index: ", split_index)
+
+        for i in range(split_index + 1):
             offspring_schedule_a.append(genome_parts[i](parent_a[index_class_scheduling]))
-            offspring_schedule_b.append(genome_parts[len(genome_parts) - 1 - i](parent_b[index_class_scheduling]))
-            # rest for later, think about it
-            
-            
-            
+            offspring_schedule_b.append(genome_parts[i](parent_b[index_class_scheduling]))
 
+        for i in range(split_index + 1, len(genome_parts)):
+            offspring_schedule_a.append(genome_parts[i](parent_b[index_class_scheduling]))
+            offspring_schedule_b.append(genome_parts[i](parent_a[index_class_scheduling]))
 
+        offspring_schedule_a = [item for sublist in offspring_schedule_a for item in sublist]
+        offspring_schedule_b = [item for sublist in offspring_schedule_b for item in sublist]
+
+        offspring_a.append(offspring_schedule_a)
+        offspring_b.append(offspring_schedule_b)
+
+        # print("After crossover:")
+        # print("OffspringPart A:")
+        # print(translate_genome([offspring_schedule_a], string_=True, chronological=False))
+        # print("OffspringPart B:")
+        # print(translate_genome([offspring_schedule_b], string_=True, chronological=False))
+        # print("")   
+    return offspring_a, offspring_b
+            
 def crossover(parent_a, parent_b):
     # for the crossover function we use a single-point crossover
     # we choose a random index in the genome and we swap the genes after that index
@@ -460,11 +483,7 @@ def run_genetic_algorithm(generation_limit, fitness_limit, population_size):
         for j in range(int(len(population)/2) - 1):
             parents = select_parents(population, calculate_fitness_score)
             offspring_a, offspring_b = crossover_alternative(parents[0], parents[1])
-            # print("Offspring a: ")
-            # print_per_line(translate_genome(offspring_a, string_=True))
-            # print("Offspring b: ")
-            # print_per_line(translate_genome(offspring_b, string_=True))
-            
+
             offspring_a = mutate(offspring_a) 
             offspring_b = mutate(offspring_b)  
             # print("Offspring a after mutation: ")
@@ -473,14 +492,14 @@ def run_genetic_algorithm(generation_limit, fitness_limit, population_size):
             # print_per_line(translate_genome(offspring_b, string_=True))
             next_generation += [offspring_a, offspring_b]
         population = next_generation
-
+    
     population = sorted(population, key=lambda genome: calculate_fitness_score(genome), reverse=True)
 
     return population, i
 
 start = time.time()
 
-population, generations = run_genetic_algorithm(generation_limit=100, fitness_limit=1000,population_size=20)
+population, generations = run_genetic_algorithm(generation_limit=1000, fitness_limit=1,population_size=100)
 
 end = time.time()
 
@@ -488,3 +507,44 @@ print(f"Number of generations: {generations}")
 print(f"Time: {end - start}")
 print(f"Best solution: ")
 print_per_line(translate_genome(population[0], string_=True, chronological=True))
+
+best_solution = {'class': 'HE722C', 'class_type': 'AV', 'class_group': 'B', 'professor': 11.785, 'timeslot_day': 'Monday', 'timeslot': '19:00-19:50', 'et': 1}
+{'class': 'GB922G', 'class_type': 'AV', 'class_group': 'B', 'professor': 12.203, 'timeslot_day': 'Monday', 'timeslot': '19:00-19:50', 'et': 3}
+{'class': 'AD222A', 'class_type': 'AT', 'class_group': 'A', 'professor': 14.616, 'timeslot_day': 'Monday', 'timeslot': '19:00-19:50', 'et': 7}
+{'class': 'R8512C', 'class_type': 'AV', 'class_group': 'A', 'professor': 14.472, 'timeslot_day': 'Monday', 'timeslot': '19:00-19:50', 'et': 3}
+{'class': 'GL822B', 'class_type': 'AT', 'class_group': 'A', 'professor': 13.034, 'timeslot_day': 'Monday', 'timeslot': '19:50-20:40', 'et': 5}
+{'class': 'R0812C', 'class_type': 'AV', 'class_group': 'B', 'professor': 13.034, 'timeslot_day': 'Monday', 'timeslot': '19:50-20:40', 'et': 3}
+{'class': 'R0812B', 'class_type': 'AT', 'class_group': 'B', 'professor': 14.472, 'timeslot_day': 'Monday', 'timeslot': '20:55-21:45', 'et': 3}
+{'class': 'AC922A', 'class_type': 'AP', 'class_group': 'A', 'professor': 14.642, 'timeslot_day': 'Monday', 'timeslot': '20:55-21:45', 'et': 7}
+{'class': 'AE422A', 'class_type': 'AV', 'class_group': 'B', 'professor': 14.091, 'timeslot_day': 'Monday', 'timeslot': '21:45-22:35', 'et': 3}
+{'class': 'R0812B', 'class_type': 'AT', 'class_group': 'A', 'professor': 13.034, 'timeslot_day': 'Monday', 'timeslot': '21:45-22:35', 'et': 3}
+{'class': 'HF222B', 'class_type': 'AP', 'class_group': 'B', 'professor': 13.034, 'timeslot_day': 'Monday', 'timeslot': '21:45-22:35', 'et': 1}
+{'class': 'HE722D', 'class_type': 'AP', 'class_group': 'B', 'professor': 13.034, 'timeslot_day': 'Tuesday', 'timeslot': '19:00-19:50', 'et': 1}
+{'class': 'AE422A', 'class_type': 'AP', 'class_group': 'B', 'professor': 14.091, 'timeslot_day': 'Tuesday', 'timeslot': '19:00-19:50', 'et': 3}
+{'class': 'R0812C', 'class_type': 'AT', 'class_group': 'A', 'professor': 13.034, 'timeslot_day': 'Tuesday', 'timeslot': '19:00-19:50', 'et': 3}
+{'class': 'HE722C', 'class_type': 'AV', 'class_group': 'B', 'professor': 13.034, 'timeslot_day': 'Tuesday', 'timeslot': '19:50-20:40', 'et': 1}
+{'class': 'GK622B', 'class_type': 'AT', 'class_group': 'A', 'professor': 13.0, 'timeslot_day': 'Tuesday', 'timeslot': '20:55-21:45', 'et': 5}
+{'class': 'R0812B', 'class_type': 'AT', 'class_group': 'B', 'professor': 13.034, 'timeslot_day': 'Tuesday', 'timeslot': '20:55-21:45', 'et': 3}
+{'class': 'HE722C', 'class_type': 'AT', 'class_group': 'A', 'professor': 13.034, 'timeslot_day': 'Tuesday', 'timeslot': '21:45-22:35', 'et': 1}
+{'class': 'R0812B', 'class_type': 'AV', 'class_group': 'B', 'professor': 13.034, 'timeslot_day': 'Wednesday', 'timeslot': '19:00-19:50', 'et': 3}
+{'class': 'AC222A', 'class_type': 'AT', 'class_group': 'A', 'professor': 12.274, 'timeslot_day': 'Wednesday', 'timeslot': '19:00-19:50', 'et': 5}
+{'class': 'AC222A', 'class_type': 'AV', 'class_group': 'A', 'professor': 12.274, 'timeslot_day': 'Wednesday', 'timeslot': '19:00-19:50', 'et': 5}
+{'class': 'AD422A', 'class_type': 'AP', 'class_group': 'A', 'professor': 12.274, 'timeslot_day': 'Wednesday', 'timeslot': '19:00-19:50', 'et': 7}
+{'class': 'AC922A', 'class_type': 'AP', 'class_group': 'A', 'professor': 14.642, 'timeslot_day': 'Wednesday', 'timeslot': '19:00-19:50', 'et': 7}
+{'class': 'R8512C', 'class_type': 'AV', 'class_group': 'B', 'professor': 14.472, 'timeslot_day': 'Wednesday', 'timeslot': '20:55-21:45', 'et': 3}
+{'class': 'AD322A', 'class_type': 'AV', 'class_group': 'A', 'professor': 13.0, 'timeslot_day': 'Wednesday', 'timeslot': '21:45-22:35', 'et': 7}
+{'class': 'R8512C', 'class_type': 'AV', 'class_group': 'A', 'professor': 14.875, 'timeslot_day': 'Wednesday', 'timeslot': '21:45-22:35', 'et': 3}
+{'class': 'AD422A', 'class_type': 'AT', 'class_group': 'A', 'professor': 13.07, 'timeslot_day': 'Thursday', 'timeslot': '19:00-19:50', 'et': 7}
+{'class': 'GL822B', 'class_type': 'AV', 'class_group': 'A', 'professor': 13.034, 'timeslot_day': 'Thursday', 'timeslot': '19:00-19:50', 'et': 5}
+{'class': 'HE722D', 'class_type': 'AT', 'class_group': 'B', 'professor': 14.776, 'timeslot_day': 'Thursday', 'timeslot': '19:00-19:50', 'et': 1}
+{'class': 'GB922G', 'class_type': 'AV', 'class_group': 'A', 'professor': 12.203, 'timeslot_day': 'Thursday', 'timeslot': '19:50-20:40', 'et': 3}
+{'class': 'AC422A', 'class_type': 'AT', 'class_group': 'A', 'professor': 14.525, 'timeslot_day': 'Thursday', 'timeslot': '20:55-21:45', 'et': 5}
+{'class': 'HE722C', 'class_type': 'AV', 'class_group': 'A', 'professor': 14.525, 'timeslot_day': 'Thursday', 'timeslot': '21:45-22:35', 'et': 1}
+{'class': 'HF222B', 'class_type': 'AP', 'class_group': 'B', 'professor': 13.034, 'timeslot_day': 'Thursday', 'timeslot': '21:45-22:35', 'et': 1}
+{'class': 'HE722D', 'class_type': 'AT', 'class_group': 'B', 'professor': 13.034, 'timeslot_day': 'Friday', 'timeslot': '19:00-19:50', 'et': 1}
+{'class': 'AC922A', 'class_type': 'AV', 'class_group': 'A', 'professor': 11.792, 'timeslot_day': 'Friday', 'timeslot': '19:00-19:50', 'et': 7}
+{'class': 'GM722B', 'class_type': 'AV', 'class_group': 'A', 'professor': 11.792, 'timeslot_day': 'Friday', 'timeslot': '19:50-20:40', 'et': 7}
+{'class': 'GJ922C', 'class_type': 'AT', 'class_group': 'A', 'professor': 14.472, 'timeslot_day': 'Friday', 'timeslot': '20:55-21:45', 'et': 3}
+{'class': 'AD222A', 'class_type': 'AV', 'class_group': 'A', 'professor': 14.616, 'timeslot_day': 'Friday', 'timeslot': '21:45-22:35', 'et': 7}
+{'class': 'R8512D', 'class_type': 'AT', 'class_group': 'B', 'professor': 14.472, 'timeslot_day': 'Saturday', 'timeslot': '20:55-21:45', 'et': 3}
+{'class': 'HE722C', 'class_type': 'AT', 'class_group': 'B', 'professor': 14.525, 'timeslot_day': 'Saturday', 'timeslot': '21:45-22:35', 'et': 1}
