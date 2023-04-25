@@ -1,8 +1,0 @@
-DONE
-- check whether a professor is capable of teaching a class
-- check whether the classes are scheduled for the right amount
-- check whether the classes are not scheduled on a Saturday
-- check whether the classes are scheduled for 2 or 4 consecutive timeslots + check if classes that are scheduled on the same timeslot are of type AT and have a different class_group
-- check if the teacher is available at that timeslot
-
-TODO

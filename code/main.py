@@ -342,8 +342,8 @@ def calculate_fitness_score(genome):
     translated_genome = translate_genome(genome, string_=True, chronological=True)
     hex_genome = translate_genome(genome, hex_=True, chronological=True)
     total_violations = 0
-    violations_assingning_professor = get_violation_count_assigning_professor(translated_genome)
-    # violations_class_scheduling_count = get_violation_count_class_scheduling(translated_genome)
+    # violations_assingning_professor = get_violation_count_assigning_professor(translated_genome)
+    violations_class_scheduling_count = get_violation_count_class_scheduling(translated_genome)
     # violations_saturday_classes = get_violation_count_saturday_classes(translated_genome)
     # violations_consecutive_classes = get_violation_count_consecutive_classes(hex_genome)
     # violations_availability_professor = get_violation_count_professor_availability(translated_genome)
@@ -353,8 +353,8 @@ def calculate_fitness_score(genome):
     # print("Violation saturday classes: ", violations_saturday_classes)
     # print("Violation consecutive classes: ", violations_consecutive_classes)
     # print("Violation professor availability: ", violations_availability_professor)
-    total_violations += violations_assingning_professor
-    # total_violations += violations_class_scheduling_count
+    # total_violations += violations_assingning_professor
+    total_violations += violations_class_scheduling_count
     # total_violations += violations_saturday_classes
     # total_violations += violations_consecutive_classes
     # total_violations += violations_availability_professor
@@ -508,7 +508,7 @@ def run_genetic_algorithm(generation_limit, fitness_limit,mutation_rate, populat
 
 start = time.time()
 
-population, generations = run_genetic_algorithm(generation_limit=1000, fitness_limit=1,mutation_rate=0.005,population_size=20)
+population, generations = run_genetic_algorithm(generation_limit=3000, fitness_limit=1,mutation_rate=0.005,population_size=30)
 
 end = time.time()
 

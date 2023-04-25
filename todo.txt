@@ -1,4 +1,7 @@
 PRIORITY:
+- Check length of genome
+- Change the lists to numpy arrays, this will improve the speed of the algorithm + make use of OOP
+- Dynamic mutation rate?
 - Change the consecutive scheduling to a more efficient algorithm, if classes are given on the same timeslot they don't have to be equal, 
 just check conflicts! If classes are the same you can check on class group and class type, otherwise just check conflicts
 
@@ -9,3 +12,4 @@ EXTRA:
 - Make sure the classes are not spread too much. For example if a class is given from 8am until 10pm and another class is scheduled 
 that day, it would be better to schedule it from 10am until 12am rather than scheduling that last course at night from 7pm until 9pm.
 - A teacher can teach multiple courses but make sure the teacher doesnt have to teach too much in a day.
+- Test execution speed even vs uneven semester
