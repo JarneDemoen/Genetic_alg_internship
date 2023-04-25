@@ -1,14 +1,8 @@
-- Check if the genome generates schedules enough classes according to the number of class groups
-- rewrite the code to make it more readable
-- Implement a function that will check if a newly generated child or mutation is still valid
- Constraints:
-- All classes should be scheduled for 2 or 4 hours straight, with the same variables = OK
-- AT classes should be scheduled together on the same timeslot with the same professor = OK
-- You can schedule courses on Saturday but only in emergency cases = OK
-- The number of classes in a week should correspond with the AT, AP and AV number = OK
-- A qualified teacher has to be assigned for a specific course = OK
-- Only 1 turma starting from etapa 4 = OK
-- Change mutation function so that each bit has a probability to be flipped of 5%
+- Made it faster by reducing the population amount to 20 instead of 100
+- Number of scheduled classes is now correct 
+- Created the no duplicates csv, because I create the variations in the code
+- Implemented guided mutation thanks to ChatGPT
+
 
 
 
