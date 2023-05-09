@@ -1,12 +1,12 @@
 PRIORITY:
-- Check length of genome
 - Change the lists to numpy arrays, this will improve the speed of the algorithm + make use of OOP
 - Dynamic mutation rate?
 - Change the consecutive scheduling to a more efficient algorithm, if classes are given on the same timeslot they don't have to be equal, 
 just check conflicts! If classes are the same you can check on class group and class type, otherwise just check conflicts
-
+- Professor availability
 
 EXTRA:
+- Check length of genome
 - With the consecutive scheduled courses, make sure they are not scheduled before and right after the lunch or diner break
 - AP classes should be seperated.
 - Make sure the classes are not spread too much. For example if a class is given from 8am until 10pm and another class is scheduled 

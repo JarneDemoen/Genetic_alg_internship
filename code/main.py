@@ -466,6 +466,10 @@ def mutate_alternative(genome):
 
 def run_genetic_algorithm(generation_limit, fitness_limit,mutation_rate, population_size):
     population = generate_population(population_size=population_size)
+    import numpy as np
+    print("Dimension of the population: ")
+    print(np.shape(population))
+    
     # genome = population[0]
     # translation = translate_genome(genome, string_=True)
     # print_per_line(translation)
