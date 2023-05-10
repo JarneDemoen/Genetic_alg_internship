@@ -38,7 +38,7 @@ class GenerateClassSchedule:
 
         self.population = np.zeros((self.population_size, self.genome_size, self.genome_part_bit_length), dtype=int)
 
-        self.run_genetic_algorithm()
+        self.best_solution, self.generations = self.run_genetic_algorithm()
 
     def get_bit_length(self, db_size):
         value = 0
@@ -180,12 +180,19 @@ class GenerateClassSchedule:
                 violations += 1
 
         return violations
+    
+    def get_violation_count_saturday_classes(self,genome):
+        violations = 0
+        for class_scheduling in genome:
+            if class_scheduling['timeslot_day'] == "Saturday":
+                violations += 1
+        return violations
 
     def calculate_fitness_score(self, genome):
         translated_genome = self.translate_genome(genome, string_=True, chronological=True)
         hex_genome = self.translate_genome(genome, hex_=True, chronological=True)
 
-        violations = self.get_violation_count_assigning_professor(translated_genome)
+        violations = self.get_violation_count_saturday_classes(translated_genome)
         return 1/(1+violations)
     
     
@@ -200,41 +207,74 @@ class GenerateClassSchedule:
         return population[parents_indices[0]], population[parents_indices[1]]
     
     def crossover(self, parent_a, parent_b):
-        offspring_a = np.zeros((self.genome_size, self.genome_part_bit_length), dtype=int)
-        offspring_b = np.zeros((self.genome_size, self.genome_part_bit_length), dtype=int)
-        
-        for index_class_scheduling in range(len(parent_a)):
-            offspring_class_a = np.empty([self.genome_part_bit_length], dtype=int)
-            offspring_class_b = np.empty([self.genome_part_bit_length], dtype=int)
+        offspring_a = np.empty((self.genome_size, self.genome_part_bit_length), dtype=object)
+        offspring_b = np.empty((self.genome_size, self.genome_part_bit_length), dtype=object)
 
+        for index_class_scheduling in range(len(parent_a)):
             genome_parts = [self.get_class_part, self.get_class_type_part, self.get_class_group_part, self.get_professor_part, self.get_day_part, self.get_timeslot_part]
+
+            offspring_class_a = np.empty(len(genome_parts), dtype=object)
+            offspring_class_b = np.empty(len(genome_parts), dtype=object)
             split_index = np.random.randint(0, len(genome_parts) - 2)
 
             for i in range(split_index + 1):
-                offspring_class_a = np.vstack((offspring_class_a, genome_parts[i](parent_a[index_class_scheduling])))
-                offspring_class_b = np.vstack((offspring_class_b, genome_parts[i](parent_b[index_class_scheduling])))
+                offspring_class_a[i] = genome_parts[i](parent_a[index_class_scheduling])
+                offspring_class_b[i] = genome_parts[i](parent_b[index_class_scheduling])
 
             for i in range(split_index + 1, len(genome_parts)):
-                offspring_class_a = np.vstack((offspring_class_a, genome_parts[i](parent_b[index_class_scheduling])))
-                offspring_class_b = np.vstack((offspring_class_b, genome_parts[i](parent_a[index_class_scheduling])))
+                offspring_class_a[i] = genome_parts[i](parent_b[index_class_scheduling])
+                offspring_class_b[i] = genome_parts[i](parent_a[index_class_scheduling])
 
+            offspring_class_a = np.concatenate(offspring_class_a)
+            offspring_class_b = np.concatenate(offspring_class_b)
+            
             offspring_a[index_class_scheduling] = offspring_class_a
             offspring_b[index_class_scheduling] = offspring_class_b
 
         return offspring_a, offspring_b
     
+    def validate_genome(self, genome):
+        translation = self.translate_genome(genome, string_=True)
+        if translation == False:
+            return False
+        return True
+
+    def mutate(self, genome, mutation_rate):
+        # Choose a random subset of genes to mutate based on mutation rate
+        mutation_indices = np.random.choice([True, False], size=genome.shape, p=[mutation_rate, 1 - mutation_rate])
+        # Generate new values for the mutated genes
+        for i, j in np.ndenumerate(mutation_indices):
+            if j:
+                genome[i] = 1 - genome[i]
+                valid_mutation = self.validate_genome(genome)
+                if not valid_mutation:
+                    genome[i] = 1 - genome[i]
+        return genome
+
+    def print_per_line(self,genome):
+        for i in genome:
+            print(i)
+
     def run_genetic_algorithm(self):
         self.generate_population(self.population_size)
         
         for i in range(self.generation_limit):
-            self.population = sorted(self.population, key=lambda genome: self.calculate_fitness_score(genome), reverse=True)
+            # sort the population based on the fitness score of each genome, make us of the numpy arrays
+            self.population = self.population[np.argsort([self.calculate_fitness_score(genome) for genome in self.population])][::-1]
             print("Generation: ", i+1)
             if self.calculate_fitness_score(self.population[0]) >= self.fitness_limit:
                 break
             print("Best fitness score: ", self.calculate_fitness_score(self.population[0]))
 
+            next_generation = np.empty((self.population_size, self.genome_size, self.genome_part_bit_length), dtype=object)
+
+            index_generation = 0
+
             # elitism
-            next_generation = self.population[0:2]
+            next_generation[index_generation] = self.population[0]
+            index_generation += 1
+            next_generation[index_generation] = self.population[1]
+            index_generation += 1
 
             # we pick 2 parent and generate 2 children so we loop for half the length of the generation to get as many
             # solutions in our next generation as before, we apply -1 because we saved our top 2 genomes
@@ -242,25 +282,48 @@ class GenerateClassSchedule:
             for j in range(int(len(self.population)/2)-1):
                 parents = self.select_parents(self.population, self.calculate_fitness_score)
                 offspring_a, offspring_b = self.crossover(parents[0], parents[1])
+                
+                mutated_offspring_a = self.mutate(offspring_a, self.mutation_rate)
+                mutated_offspring_b = self.mutate(offspring_b, self.mutation_rate)
+
+                next_generation[index_generation] = mutated_offspring_a
+                index_generation += 1
+                next_generation[index_generation] = mutated_offspring_b
+                index_generation += 1
+            
+            self.population = next_generation
+
+        self.population = self.population[np.argsort([self.calculate_fitness_score(genome) for genome in self.population])][::-1]
+
+        return self.population[0], i+1
+                
+                
 
 # User inputs
-dataset_classes = pd.read_csv('../data/ClassesNoDuplicates.csv', sep=';')
-dataset_classes = dataset_classes.sort_values(by=['ET'])
-dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
-semester = "odd"
-timeslots_per_day = [
+input_dataset_classes = pd.read_csv('../data/ClassesNoDuplicates.csv', sep=';')
+input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
+input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
+input_semester = "odd"
+input_timeslots_per_day = [
     "19:00-19:50",
     "19:50-20:40",
     "20:55-21:45",
     "21:45-22:35"]
-class_groups = ["A", "B"]
-generation_limit = 100
-fitness_limit = 1
-mutation_rate = 0.005
-population_size = 30
+input_class_groups = ["A", "B"]
+input_generation_limit = 1000
+input_fitness_limit = 1
+input_mutation_rate = 0.005
+input_population_size = 10
 
-class_schedule = GenerateClassSchedule(dataset_classes=dataset_classes, dataset_competence_teachers=dataset_competence_teachers,
-                                       dataset_professor_availability=None ,semester=semester, timeslots_per_day=timeslots_per_day, 
-                                       class_groups=class_groups, generation_limit=generation_limit, fitness_limit=fitness_limit,
-                                       mutation_rate=mutation_rate,population_size=population_size)
-            
+start = time.time()
+
+class_schedule = GenerateClassSchedule(dataset_classes=input_dataset_classes, dataset_competence_teachers=input_dataset_competence_teachers,
+                                       dataset_professor_availability=None ,semester=input_semester, timeslots_per_day=input_timeslots_per_day, 
+                                       class_groups=input_class_groups, generation_limit=input_generation_limit, fitness_limit=input_fitness_limit,
+                                       mutation_rate=input_mutation_rate,population_size=input_population_size)
+end = time.time()
+
+print("Generations: ", class_schedule.generations)
+print("Time: ", end - start)
+print("Best solution: ")
+class_schedule.print_per_line(class_schedule.translate_genome(class_schedule.best_solution, string_=True, chronological=True))
