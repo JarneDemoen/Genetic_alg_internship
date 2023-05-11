@@ -1,6 +1,5 @@
 PRIORITY:
 - Professor availability
-- Find a way to make sure the algorithm works fast enough
 - Implement other constraints once the algorithm seems to be working fast enough
 
 EXTRA:

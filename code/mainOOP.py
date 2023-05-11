@@ -22,7 +22,6 @@ class GenerateClassSchedule:
         self.mutation_rate = mutation_rate
         self.population_size = population_size
         self.professors = self.dataset_competence_teachers['PROFESSOR CODE'].unique()
-        
         self.days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday']
         self.dataset_classes_semester = self.get_classes_semester(self.dataset_classes, self.semester)
         self.timeslots_week = [timeslots_per_day for i in range(len(self.days))]
@@ -38,7 +37,6 @@ class GenerateClassSchedule:
         self.genome_part_bit_length = self.classes_bit_length + self.class_types_bit_length + self.class_groups_bit_length + self.professors_bit_length + self.days_bit_length + self.timeslots_per_day_bit_length
 
         self.population = np.zeros((self.population_size, self.genome_size, self.genome_part_bit_length), dtype=int)
-
         self.best_solution, self.generations = self.run_genetic_algorithm()
 
     def get_competence_teachers(self, dataset_competence_teachers):
@@ -247,13 +245,23 @@ class GenerateClassSchedule:
 
         return self.population[0], i+1
     
-    def select_parents(self, population, fitness_function):
+    def select_parents_old(self, population, fitness_function):
         # calculate the fitness values for each genome in the population
         fitness_values = np.array([fitness_function(genome) for genome in population])
         
         # select two parents using the fitness values as weights
         parents_indices = np.random.choice(len(population), size=2, replace=True, p=fitness_values/fitness_values.sum())
         
+        # return the selected parents
+        return population[parents_indices[0]], population[parents_indices[1]]
+    
+    def select_parents(self, population, fitness_function):
+        # Only choose out of the top 5 parents ranked on fitness values
+        fitness_values = np.array([fitness_function(genome) for genome in population[:5]])
+
+        # select two parents using the fitness values as weights
+        parents_indices = np.random.choice(5, size=2, replace=True, p=fitness_values/fitness_values.sum())
+
         # return the selected parents
         return population[parents_indices[0]], population[parents_indices[1]]
     
@@ -314,6 +322,7 @@ class GenerateClassSchedule:
 input_dataset_classes = pd.read_csv('../data/ClassesNoDuplicates.csv', sep=';')
 input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
 input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
+input_professor_availability = None
 input_semester = "odd"
 input_timeslots_per_day = [
     "19:00-19:50",
