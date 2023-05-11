@@ -1,7 +1,9 @@
-- Made it faster by reducing the population amount to 20 instead of 100
+- Made it faster by reducing the population amount to 20 instead of 100 and by not calculating the hex_genome
 - Number of scheduled classes is now correct 
 - Created the no duplicates csv, because I create the variations in the code
-- Implemented guided mutation thanks to ChatGPT
+- OOP implementation with numpy (not particularly faster)
+- Guided mutation with population of 10 gave promising results --> perfect solution for professor and saturday constraint in 304 seconds (480 generations)
+
 
 
 

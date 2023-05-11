@@ -12,6 +12,7 @@ class GenerateClassSchedule:
                  timeslots_per_day, class_groups, generation_limit, fitness_limit, mutation_rate, population_size):
         self.dataset_classes = dataset_classes
         self.dataset_competence_teachers = dataset_competence_teachers
+        self.dict_competence_teachers = self.get_competence_teachers(self.dataset_competence_teachers)
         self.dataset_professor_availability = dataset_professor_availability
         self.semester = semester
         self.timeslots_per_day = timeslots_per_day
@@ -40,6 +41,15 @@ class GenerateClassSchedule:
 
         self.best_solution, self.generations = self.run_genetic_algorithm()
 
+    def get_competence_teachers(self, dataset_competence_teachers):
+        competence_teachers_dict = {}
+        for professor in dataset_competence_teachers['PROFESSOR CODE'].unique():
+            competence_teachers_dict[professor] = []
+            for index in range(len(dataset_competence_teachers)):
+                if dataset_competence_teachers['PROFESSOR CODE'][index] == professor:
+                    competence_teachers_dict[professor].append(dataset_competence_teachers['DISCIPLINA'][index])
+        return competence_teachers_dict
+    
     def get_bit_length(self, db_size):
         value = 0
         for i in range(10):
@@ -174,9 +184,9 @@ class GenerateClassSchedule:
     def get_violation_count_assigning_professor(self, genome):
         violations = 0
         for class_scheduling in genome:
-            professor = class_scheduling['professor']
-            class_name = class_scheduling['class'][:5]
-            if class_name not in self.dataset_competence_teachers[self.dataset_competence_teachers['PROFESSOR CODE'] == professor]['DISCIPLINA'].values:
+            professor = self.professors[class_scheduling['professor']]
+            class_name = self.dataset_classes_semester['DISCIPLINA'][class_scheduling['class']]
+            if class_name not in self.dict_competence_teachers[professor]:
                 violations += 1
 
         return violations
@@ -184,17 +194,58 @@ class GenerateClassSchedule:
     def get_violation_count_saturday_classes(self,genome):
         violations = 0
         for class_scheduling in genome:
-            if class_scheduling['timeslot_day'] == "Saturday":
-                violations += 1
+            if class_scheduling['timeslot_day'] == 5:
+                violations += 0.2
         return violations
 
     def calculate_fitness_score(self, genome):
-        translated_genome = self.translate_genome(genome, string_=True, chronological=True)
         hex_genome = self.translate_genome(genome, hex_=True, chronological=True)
-
-        violations = self.get_violation_count_saturday_classes(translated_genome)
+        violations = 0
+        violations += self.get_violation_count_saturday_classes(hex_genome)
+        violations += self.get_violation_count_assigning_professor(hex_genome)
         return 1/(1+violations)
-    
+
+    def run_genetic_algorithm(self):
+        self.generate_population(self.population_size)
+        
+        for i in range(self.generation_limit):
+            # sort the population based on the fitness score of each genome, make us of the numpy arrays
+            self.population = self.population[np.argsort([self.calculate_fitness_score(genome) for genome in self.population])][::-1]
+            print("Generation: ", i+1)
+            if self.calculate_fitness_score(self.population[0]) >= self.fitness_limit:
+                break
+            print("Best fitness score: ", self.calculate_fitness_score(self.population[0]))
+
+            next_generation = np.empty((self.population_size, self.genome_size, self.genome_part_bit_length), dtype=object)
+
+            index_generation = 0
+
+            # elitism
+            next_generation[index_generation] = self.population[0]
+            index_generation += 1
+            next_generation[index_generation] = self.population[1]
+            index_generation += 1
+
+            # we pick 2 parent and generate 2 children so we loop for half the length of the generation to get as many
+            # solutions in our next generation as before, we apply -1 because we saved our top 2 genomes
+
+            for j in range(int(len(self.population)/2)-1):
+                parents = self.select_parents(self.population, self.calculate_fitness_score)
+                offspring_a, offspring_b = self.crossover(parents[0], parents[1])
+                
+                mutated_offspring_a = self.mutate(offspring_a, self.mutation_rate)
+                mutated_offspring_b = self.mutate(offspring_b, self.mutation_rate)
+
+                next_generation[index_generation] = mutated_offspring_a
+                index_generation += 1
+                next_generation[index_generation] = mutated_offspring_b
+                index_generation += 1
+            
+            self.population = next_generation
+
+        self.population = self.population[np.argsort([self.calculate_fitness_score(genome) for genome in self.population])][::-1]
+
+        return self.population[0], i+1
     
     def select_parents(self, population, fitness_function):
         # calculate the fitness values for each genome in the population
@@ -238,67 +289,27 @@ class GenerateClassSchedule:
         if translation == False:
             return False
         return True
-
-    def mutate(self, genome, mutation_rate):
-        # Choose a random subset of genes to mutate based on mutation rate
-        mutation_indices = np.random.choice([True, False], size=genome.shape, p=[mutation_rate, 1 - mutation_rate])
-        # Generate new values for the mutated genes
-        for i, j in np.ndenumerate(mutation_indices):
-            if j:
-                genome[i] = 1 - genome[i]
-                valid_mutation = self.validate_genome(genome)
-                if not valid_mutation:
-                    genome[i] = 1 - genome[i]
+    
+    def mutate(self,genome,mutation_rate):
+        # calculate the fitness score of the genome
+        fitness_score = self.calculate_fitness_score(genome)
+        for i in range(genome.shape[0]):
+            for j in range(genome.shape[1]):
+                if np.random.rand() < mutation_rate:
+                    genome[i][j] = 1 - genome[i][j]
+                    valid_mutation = self.validate_genome(genome)
+                    if not valid_mutation:
+                        genome[i][j] = 1 - genome[i][j]
+                    else:
+                        fitness_score_mutated = self.calculate_fitness_score(genome)
+                        if fitness_score_mutated < fitness_score:
+                            genome[i][j] = 1 - genome[i][j]
         return genome
-
+    
     def print_per_line(self,genome):
         for i in genome:
             print(i)
-
-    def run_genetic_algorithm(self):
-        self.generate_population(self.population_size)
-        
-        for i in range(self.generation_limit):
-            # sort the population based on the fitness score of each genome, make us of the numpy arrays
-            self.population = self.population[np.argsort([self.calculate_fitness_score(genome) for genome in self.population])][::-1]
-            print("Generation: ", i+1)
-            if self.calculate_fitness_score(self.population[0]) >= self.fitness_limit:
-                break
-            print("Best fitness score: ", self.calculate_fitness_score(self.population[0]))
-
-            next_generation = np.empty((self.population_size, self.genome_size, self.genome_part_bit_length), dtype=object)
-
-            index_generation = 0
-
-            # elitism
-            next_generation[index_generation] = self.population[0]
-            index_generation += 1
-            next_generation[index_generation] = self.population[1]
-            index_generation += 1
-
-            # we pick 2 parent and generate 2 children so we loop for half the length of the generation to get as many
-            # solutions in our next generation as before, we apply -1 because we saved our top 2 genomes
-
-            for j in range(int(len(self.population)/2)-1):
-                parents = self.select_parents(self.population, self.calculate_fitness_score)
-                offspring_a, offspring_b = self.crossover(parents[0], parents[1])
                 
-                mutated_offspring_a = self.mutate(offspring_a, self.mutation_rate)
-                mutated_offspring_b = self.mutate(offspring_b, self.mutation_rate)
-
-                next_generation[index_generation] = mutated_offspring_a
-                index_generation += 1
-                next_generation[index_generation] = mutated_offspring_b
-                index_generation += 1
-            
-            self.population = next_generation
-
-        self.population = self.population[np.argsort([self.calculate_fitness_score(genome) for genome in self.population])][::-1]
-
-        return self.population[0], i+1
-                
-                
-
 # User inputs
 input_dataset_classes = pd.read_csv('../data/ClassesNoDuplicates.csv', sep=';')
 input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
@@ -310,9 +321,9 @@ input_timeslots_per_day = [
     "20:55-21:45",
     "21:45-22:35"]
 input_class_groups = ["A", "B"]
-input_generation_limit = 1000
+input_generation_limit = 100000
 input_fitness_limit = 1
-input_mutation_rate = 0.005
+input_mutation_rate = 0.0075
 input_population_size = 10
 
 start = time.time()
