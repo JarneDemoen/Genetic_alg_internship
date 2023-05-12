@@ -3,7 +3,8 @@
 - Created the no duplicates csv, because I create the variations in the code
 - OOP implementation with numpy (not particularly faster)
 - Guided mutation with population of 10 gave promising results --> perfect solution for professor and saturday constraint in 304 seconds (480 generations)
-- With the selection operator --> select only out of the 5 best solutions --> perfect solution for professor and saturday constraint in 249 seconds (428 generations)
+- With the selection operator --> select only out of the 5 best solutions --> perfect solution for professor and saturday constraint in 209 seconds (357 generations)
+- Changed the timeslots so everything is always scheduled for 2 hours straight
 
 
 

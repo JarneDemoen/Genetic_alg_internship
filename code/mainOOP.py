@@ -75,7 +75,7 @@ class GenerateClassSchedule:
             else:
                 genome_size += nr_at + nr_ap + nr_av
         
-        return genome_size
+        return int(genome_size/2)
     
     def get_hex_value(self,binary_code):
         # reverse the encoded_part
@@ -195,12 +195,56 @@ class GenerateClassSchedule:
             if class_scheduling['timeslot_day'] == 5:
                 violations += 0.2
         return violations
+    
+    def get_violation_count_assigning_classes(self, genome):
+        violations = 0
+        for index_class in range(len(self.dataset_classes_semester)):
+            nr_at = {}
+            nr_ap = {}
+            nr_av = {}
+            class_name = self.dataset_classes_semester['DISCIPLINA'][index_class]
 
+            if self.dataset_classes_semester['ET'][index_class] >= 4:
+                class_groups = ['A']
+            else:
+                class_groups = self.class_groups
+
+            for class_group in class_groups:
+                nr_at[class_group] = int(self.dataset_classes_semester['AT'][index_class]/2)
+                nr_ap[class_group] = int(self.dataset_classes_semester['AP'][index_class]/2)
+                nr_av[class_group] = int(self.dataset_classes_semester['AV'][index_class]/2)
+
+            for class_scheduling in genome:
+                for i in range(len(class_groups)):
+                    if class_scheduling['class_group'] == i:
+                        class_group = class_groups[i]
+                        break
+                if class_scheduling['class'] == index_class:
+                    if class_scheduling['class_type'] == 0:
+                        nr_at[class_group] -= 1
+                    elif class_scheduling['class_type'] == 1:
+                        nr_ap[class_group] -= 1
+                    elif class_scheduling['class_type'] == 2:
+                        nr_av[class_group] -= 1
+
+            for values in nr_at.values():
+                violations += abs(values)
+
+            for values in nr_ap.values():
+                violations += abs(values)
+
+            for values in nr_av.values():
+                violations += abs(values)
+
+        return violations
+    
     def calculate_fitness_score(self, genome):
         hex_genome = self.translate_genome(genome, hex_=True, chronological=True)
+        self.translated_genome = self.translate_genome(genome, string_=True, chronological=True)
         violations = 0
         violations += self.get_violation_count_saturday_classes(hex_genome)
         violations += self.get_violation_count_assigning_professor(hex_genome)
+        violations += self.get_violation_count_assigning_classes(hex_genome)
         return 1/(1+violations)
 
     def run_genetic_algorithm(self):
@@ -256,11 +300,11 @@ class GenerateClassSchedule:
         return population[parents_indices[0]], population[parents_indices[1]]
     
     def select_parents(self, population, fitness_function):
-        # Only choose out of the top 5 parents ranked on fitness values
-        fitness_values = np.array([fitness_function(genome) for genome in population[:5]])
+        # Only choose out of the top half ranked on fitness values
+        fitness_values = np.array([fitness_function(genome) for genome in population[:int(self.population_size/2)]])
 
         # select two parents using the fitness values as weights
-        parents_indices = np.random.choice(5, size=2, replace=True, p=fitness_values/fitness_values.sum())
+        parents_indices = np.random.choice(int(self.population_size/2), size=2, replace=True, p=fitness_values/fitness_values.sum())
 
         # return the selected parents
         return population[parents_indices[0]], population[parents_indices[1]]
@@ -322,13 +366,35 @@ class GenerateClassSchedule:
 input_dataset_classes = pd.read_csv('../data/ClassesNoDuplicates.csv', sep=';')
 input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
 input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
-input_professor_availability = None
+
 input_semester = "odd"
+# input_timeslots_per_day = [
+#     "19:00-19:50",
+#     "19:50-20:40",
+#     "20:55-21:45",
+#     "21:45-22:35"]
+
 input_timeslots_per_day = [
-    "19:00-19:50",
-    "19:50-20:40",
-    "20:55-21:45",
-    "21:45-22:35"]
+    "19:00-20:40",
+    "20:55-22:35",]
+
+days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday']
+
+input_professor_availability = {}
+for professor in input_dataset_competence_teachers['PROFESSOR CODE'].unique():
+    input_professor_availability[professor] = []
+    for day in days:
+        for timeslot in input_timeslots_per_day:
+            if np.random.choice([True, False], p=[0.42, 0.58]):
+                input_professor_availability[professor].append({'day': day, 'timeslot': timeslot})
+
+# for professor in input_professor_availability:
+#     print("Professor: ", professor)
+#     for i in input_professor_availability[professor]:
+#         print(i)
+#     print("------------------")
+    
+
 input_class_groups = ["A", "B"]
 input_generation_limit = 100000
 input_fitness_limit = 1
