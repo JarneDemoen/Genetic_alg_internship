@@ -36,6 +36,8 @@ class GenerateClassSchedule:
         self.timeslots_per_day_bit_length = self.get_bit_length(len(self.timeslots_per_day))
         self.genome_part_bit_length = self.classes_bit_length + self.class_types_bit_length + self.class_groups_bit_length + self.professors_bit_length + self.days_bit_length + self.timeslots_per_day_bit_length
 
+        self.best_fitness_score = 0
+
         self.population = np.zeros((self.population_size, self.genome_size, self.genome_part_bit_length), dtype=int)
         self.best_solution, self.generations = self.run_genetic_algorithm()
 
@@ -75,7 +77,7 @@ class GenerateClassSchedule:
             else:
                 genome_size += nr_at + nr_ap + nr_av
         
-        return int(genome_size/2)
+        return genome_size
     
     def get_hex_value(self,binary_code):
         # reverse the encoded_part
@@ -202,7 +204,6 @@ class GenerateClassSchedule:
             nr_at = {}
             nr_ap = {}
             nr_av = {}
-            class_name = self.dataset_classes_semester['DISCIPLINA'][index_class]
 
             if self.dataset_classes_semester['ET'][index_class] >= 4:
                 class_groups = ['A']
@@ -210,9 +211,9 @@ class GenerateClassSchedule:
                 class_groups = self.class_groups
 
             for class_group in class_groups:
-                nr_at[class_group] = int(self.dataset_classes_semester['AT'][index_class]/2)
-                nr_ap[class_group] = int(self.dataset_classes_semester['AP'][index_class]/2)
-                nr_av[class_group] = int(self.dataset_classes_semester['AV'][index_class]/2)
+                nr_at[class_group] = self.dataset_classes_semester['AT'][index_class]
+                nr_ap[class_group] = self.dataset_classes_semester['AP'][index_class]
+                nr_av[class_group] = self.dataset_classes_semester['AV'][index_class]
 
             for class_scheduling in genome:
                 for i in range(len(class_groups)):
@@ -240,11 +241,23 @@ class GenerateClassSchedule:
     
     def calculate_fitness_score(self, genome):
         hex_genome = self.translate_genome(genome, hex_=True, chronological=True)
-        self.translated_genome = self.translate_genome(genome, string_=True, chronological=True)
         violations = 0
         violations += self.get_violation_count_saturday_classes(hex_genome)
         violations += self.get_violation_count_assigning_professor(hex_genome)
-        violations += self.get_violation_count_assigning_classes(hex_genome)
+        # violations += self.get_violation_count_assigning_classes(hex_genome)
+
+        # if self.best_fitness_score > 0.3:
+        #     print("Stuck")
+        #     print("Number of violations of assigning professor: ", self.get_violation_count_assigning_professor(hex_genome))
+        #     print("Number of violations of assigning classes: ", self.get_violation_count_assigning_classes(hex_genome))
+        #     print("Number of violations of saturday classes: ", self.get_violation_count_saturday_classes(hex_genome))
+        #     translated_genome = self.translate_genome(genome, string_=True, chronological=False)
+        #     # order the dictionary based on the alphabetical order of the class name
+        #     translated_genome = sorted(translated_genome, key=lambda k: k['class'])
+        #     self.print_per_line(translated_genome)
+        #     # stop the program
+        #     exit()
+
         return 1/(1+violations)
 
     def run_genetic_algorithm(self):
@@ -256,7 +269,10 @@ class GenerateClassSchedule:
             print("Generation: ", i+1)
             if self.calculate_fitness_score(self.population[0]) >= self.fitness_limit:
                 break
-            print("Best fitness score: ", self.calculate_fitness_score(self.population[0]))
+
+            self.best_fitness_score = self.calculate_fitness_score(self.population[0])
+
+            print("Best fitness score: ", self.best_fitness_score)
 
             next_generation = np.empty((self.population_size, self.genome_size, self.genome_part_bit_length), dtype=object)
 
@@ -366,17 +382,19 @@ class GenerateClassSchedule:
 input_dataset_classes = pd.read_csv('../data/ClassesNoDuplicates.csv', sep=';')
 input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
 input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
-
+# sort input dataset classes base on class name
+input_dataset_classes = input_dataset_classes.sort_values(by=['DISCIPLINA'])
+print(input_dataset_classes)
 input_semester = "odd"
-# input_timeslots_per_day = [
-#     "19:00-19:50",
-#     "19:50-20:40",
-#     "20:55-21:45",
-#     "21:45-22:35"]
-
 input_timeslots_per_day = [
-    "19:00-20:40",
-    "20:55-22:35",]
+    "12:45-13:35",
+    "13:35-14:25",
+    "17:10-18:00",
+    "18:00-18:50",
+    "19:00-19:50",
+    "19:50-20:40",
+    "20:55-21:45",
+    "21:45-22:35"]
 
 days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday']
 
