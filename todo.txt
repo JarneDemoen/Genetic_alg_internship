@@ -1,12 +1,10 @@
 PRIORITY:
-- If I get stuck, try to finish the perfect solution with a conventional algorithm
 - Professor availability
 - Implement other constraints once the algorithm seems to be working fast enough
 EXTRA:
-- Check length of genome
 - With the consecutive scheduled courses, make sure they are not scheduled before and right after the lunch or diner break
 - AP classes should be seperated.
 - Make sure the classes are not spread too much. For example if a class is given from 8am until 10pm and another class is scheduled 
 that day, it would be better to schedule it from 10am until 12am rather than scheduling that last course at night from 7pm until 9pm.
 - A teacher can teach multiple courses but make sure the teacher doesnt have to teach too much in a day.
-- Test execution speed even vs uneven semester
+- Test execution speed even vs odd semester

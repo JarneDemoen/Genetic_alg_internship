@@ -302,12 +302,44 @@ class GenerateClassSchedule:
 
         return violations
     
+    def get_violation_count_consecutive_classes(self,genome):
+        violations = 0
+        for i in range(len(genome) - 1):
+            current_class = genome[i]
+            next_class = genome[i + 1]
+            
+            if (
+                current_class['class'] == next_class['class'] and
+                current_class['class_type'] == next_class['class_type'] and
+                current_class['professor'] == next_class['professor'] and
+                current_class['class_group'] == next_class['class_group']
+            ):
+                if (
+                    current_class['timeslot_day'] == next_class['timeslot_day'] and
+                    current_class['timeslot'] + 1 == next_class['timeslot']
+                ):
+                    # Same class scheduled for 2 hours straight
+                    continue
+                elif (
+                    current_class['timeslot_day'] == next_class['timeslot_day'] and
+                    current_class['timeslot'] + 2 == next_class['timeslot']
+                ):
+                    # Same class scheduled for 4 hours straight
+                    continue
+
+            # Increment violations count
+            violations += 1
+
+        return violations
+
+    
     def calculate_fitness_score(self, genome):
         hex_genome = self.translate_genome(genome, hex_=True, chronological=True)
         violations = 0
         violations += self.get_violation_count_saturday_classes(hex_genome)
         violations += self.get_violation_count_assigning_professor(hex_genome)
         violations += self.get_violation_count_assigning_classes(hex_genome)
+        violations += self.get_violation_count_consecutive_classes(hex_genome)
         return 1/(1+violations)
     
     def enhance_assigning_professors(self,best_genome,incorrectly_assigned_professors):
@@ -527,7 +559,7 @@ input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';'
 # sort input dataset classes base on class name
 # input_dataset_classes = input_dataset_classes.sort_values(by=['DISCIPLINA'])
 
-input_semester = "odd"
+input_semester = "even"
 input_timeslots_per_day = [
     "12:45-13:35",
     "13:35-14:25",

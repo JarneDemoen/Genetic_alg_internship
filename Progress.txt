@@ -1,1 +1,2 @@
 - early stopping --> complete the solution with a conventional algorithm --> WORKS! and speeds up the process when stuck!
+- Faster result with even semester data only
