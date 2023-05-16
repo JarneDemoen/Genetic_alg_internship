@@ -251,8 +251,11 @@ class GenerateClassSchedule:
 
         return violations
     
-    def calculate_fitness_score(self, genome):
-        hex_genome = self.translate_genome(genome, hex_=True, chronological=True)
+    def calculate_fitness_score(self, genome, enhanced = False):
+        if not enhanced:
+            hex_genome = self.translate_genome(genome, hex_=True, chronological=True)
+        else:
+            hex_genome = genome
         violations = 0
         violations += self.get_violation_count_saturday_classes(hex_genome)
         violations += self.get_violation_count_assigning_professor(hex_genome)
@@ -260,9 +263,47 @@ class GenerateClassSchedule:
         return 1/(1+violations)
     
     def enhance_assigning_classes(self,best_genome,incorrectly_assigned_classes):
-        print("Incorrectly assigned classes: ", incorrectly_assigned_classes)
+        to_be_replaced = []
+        to_be_scheduled = []
+        for incorrectly_assigned_class in incorrectly_assigned_classes:
+            class_name = incorrectly_assigned_class['class']
+            for class_type in incorrectly_assigned_class:
+                if class_type != 'class':
+                    for class_group in incorrectly_assigned_class[class_type]:
+                        class_value = incorrectly_assigned_class[class_type][class_group]
+                        if class_value > 0:
+                            for value in range(class_value):
+                                to_be_scheduled.append({'class': class_name, 'class_type': class_type[3::].upper(), 'class_group': class_group})
+                        elif class_value < 0:
+                            for value in range(abs(class_value)):
+                                to_be_replaced.append({'class': class_name, 'class_type': class_type[3::].upper(), 'class_group': class_group})
 
-            
+        for index in range(len(to_be_replaced)):
+            index_to_be_replaced = 0
+            for class_scheduling in best_genome:
+                class_name = self.dataset_classes_semester['DISCIPLINA'][class_scheduling['class']]
+                class_type = self.class_types[class_scheduling['class_type']]
+                class_group = self.class_groups[class_scheduling['class_group']]
+
+                if class_name == to_be_replaced[index]['class'] and class_type == to_be_replaced[index]['class_type'] and class_group == to_be_replaced[index]['class_group']:
+                    print("Index to be replaced: ", index_to_be_replaced)
+                    break
+                index_to_be_replaced += 1
+
+            to_be_scheduled_class_name = to_be_scheduled[index]['class']
+            to_be_scheduled_class_type = to_be_scheduled[index]['class_type']
+            to_be_scheduled_class_group = to_be_scheduled[index]['class_group']
+
+            to_be_scheduled_class_hex = np.where(self.dataset_classes_semester['DISCIPLINA'] == to_be_scheduled_class_name)[0][0]
+            to_be_scheduled_class_type_hex = np.where(np.array(self.class_types) == to_be_scheduled_class_type)[0][0]
+            to_be_scheduled_class_group_hex = np.where(np.array(self.class_groups) == to_be_scheduled_class_group)[0][0]
+
+            best_genome[index_to_be_replaced]['class'] = to_be_scheduled_class_hex
+            best_genome[index_to_be_replaced]['class_type'] = to_be_scheduled_class_type_hex
+            best_genome[index_to_be_replaced]['class_group'] = to_be_scheduled_class_group_hex
+
+        return best_genome
+
     def run_genetic_algorithm(self):
         self.generate_population(self.population_size)
         fitness_scores = np.zeros(self.generation_limit)
@@ -286,13 +327,18 @@ class GenerateClassSchedule:
                     incorrectly_assigned_classes = self.incorrectly_assigned_classes
                     incorrectly_assigned_professors = self.incorrectly_assigned_professors
 
-                    nr_incorrectly_assigned_professors = len(incorrectly_assigned_professors)
-                    nr_incorrectly_assigned_classes = len(incorrectly_assigned_classes)
-                    print("Number of incorrectly assigned classes: ", nr_incorrectly_assigned_classes)
-                    if nr_incorrectly_assigned_classes > 0:
-                        self.enhance_assigning_classes(best_genome, incorrectly_assigned_classes)
+                    hex_best_genome = self.translate_genome(best_genome, hex_=True, chronological=True)
 
-                    return best_genome, i+1
+                    nr_incorrectly_assigned_classes = self.get_violation_count_assigning_classes(hex_best_genome)
+                    nr_incorrectly_assigned_teachers = self.get_violation_count_assigning_professor(hex_best_genome)
+
+                    if nr_incorrectly_assigned_classes > 0:
+                        hex_best_genome = self.enhance_assigning_classes(hex_best_genome, incorrectly_assigned_classes)
+
+                    # calculate the fitness score of the best_genome:
+                    best_genome_fitness_score = self.calculate_fitness_score(hex_best_genome, enhanced=True)
+                    print("Best genome fitness score: ", best_genome_fitness_score)
+                    return hex_best_genome, i+1
 
             print("Best fitness score: ", self.best_fitness_score)
 
@@ -436,11 +482,11 @@ days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday']
     
 
 input_class_groups = ["A", "B"]
-input_generation_limit = 3000
+input_generation_limit = 5000
 input_fitness_limit = 1
 input_mutation_rate = 0.0075
 input_population_size = 10
-input_early_stopping = 2
+input_early_stopping = 1
 
 start = time.time()
 
@@ -453,8 +499,3 @@ end = time.time()
 print("Generations: ", class_schedule.generations)
 print("Time: ", end - start)
 print("Best solution: ")
-class_schedule.print_per_line(class_schedule.translate_genome(class_schedule.best_solution, string_=True, chronological=True))
-translated_genome = class_schedule.translate_genome(class_schedule.best_solution, string_=True, chronological=False)
-# transform the dictionary to a csv file
-translated_genome_df = pd.DataFrame(translated_genome)
-translated_genome_df.to_csv('../data/translated_genome.csv', sep=';', index=False)
