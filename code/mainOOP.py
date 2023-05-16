@@ -49,6 +49,7 @@ class GenerateClassSchedule:
         self.violation_count_assigning_classes = self.get_violation_count_assigning_classes(self.best_solution_hex)
         self.violation_count_assigning_professor = self.get_violation_count_assigning_professor(self.best_solution_hex)
         self.violation_count_saturday_classes = self.get_violation_count_saturday_classes(self.best_solution_hex)
+        self.violation_count_consecutive_classes = self.get_violation_count_consecutive_classes(self.best_solution_hex)
         
     def get_competence_teachers(self, dataset_competence_teachers):
         competence_teachers_dict = {}
@@ -307,6 +308,7 @@ class GenerateClassSchedule:
         for i in range(len(genome) - 1):
             current_class = genome[i]
             next_class = genome[i + 1]
+            previous_class = genome[i - 1] if i > 0 else None
             
             if (
                 current_class['class'] == next_class['class'] and
@@ -327,11 +329,15 @@ class GenerateClassSchedule:
                     # Same class scheduled for 4 hours straight
                     continue
 
+            else:
+                # if the previous class was the same as the current class, there is no violation because there are 2 consecutive classes
+                if previous_class is not None and current_class['class'] == previous_class['class'] and current_class['class_type'] == previous_class['class_type'] and current_class['professor'] == previous_class['professor'] and current_class['class_group'] == previous_class['class_group']:
+                    continue
+
             # Increment violations count
             violations += 1
 
         return violations
-
     
     def calculate_fitness_score(self, genome):
         hex_genome = self.translate_genome(genome, hex_=True, chronological=True)
@@ -477,7 +483,7 @@ class GenerateClassSchedule:
         self.population = self.population[np.argsort([self.calculate_fitness_score(genome) for genome in self.population])][::-1]
         translation_best_solution = self.translate_genome(self.population[0], string_=True, chronological=True)
 
-        return translation_best_solution, i+1, self.calculate_fitness_score(self.population[0])
+        return self.population[0], i+1,
     
     def select_parents_old(self, population, fitness_function):
         # calculate the fitness values for each genome in the population
@@ -592,7 +598,7 @@ input_generation_limit = 5000
 input_fitness_limit = 1
 input_mutation_rate = 0.0075
 input_population_size = 10
-input_early_stopping = 150
+input_early_stopping = 1000
 
 start = time.time()
 
@@ -610,3 +616,4 @@ print("Fitness score: ", class_schedule.fitness_score)
 print("Violation count assigning classes: ", class_schedule.violation_count_assigning_classes)
 print("Violation count assigning professor: ", class_schedule.violation_count_assigning_professor)
 print("Violation count saturday classes: ", class_schedule.violation_count_saturday_classes)
+print("Violation count consecutive classes: ", class_schedule.violation_count_consecutive_classes)
