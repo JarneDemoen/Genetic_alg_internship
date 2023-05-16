@@ -1,8 +1,7 @@
 PRIORITY:
-- Problems with getting the number of classes right so I have to take a good look at the classes and see if the number matches
+- If I get stuck, try to finish the perfect solution with a conventional algorithm
 - Professor availability
 - Implement other constraints once the algorithm seems to be working fast enough
-
 EXTRA:
 - Check length of genome
 - With the consecutive scheduled courses, make sure they are not scheduled before and right after the lunch or diner break

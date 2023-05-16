@@ -1,9 +1,1 @@
-- Made it faster by reducing the population amount to 20 instead of 100 and by not calculating the hex_genome
-- Created the no duplicates csv, because I create the variations in the code
-- OOP implementation with numpy (not particularly faster)
-- Guided mutation with population of 10 gave promising results --> perfect solution for professor and saturday constraint in 304 seconds (480 generations)
-- With the selection operator --> select only out of the 5 best solutions --> perfect solution for professor and saturday constraint in 209 seconds (357 generations)
-
-
-
- 
+- early stopping --> complete the solution with a conventional algorithm

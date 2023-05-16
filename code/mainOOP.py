@@ -9,7 +9,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 class GenerateClassSchedule:
     def __init__(self, dataset_classes, dataset_competence_teachers, dataset_professor_availability, semester, 
-                 timeslots_per_day, class_groups, generation_limit, fitness_limit, mutation_rate, population_size):
+                 timeslots_per_day, class_groups, generation_limit, fitness_limit, mutation_rate, population_size, early_stopping):
         self.dataset_classes = dataset_classes
         self.dataset_competence_teachers = dataset_competence_teachers
         self.dict_competence_teachers = self.get_competence_teachers(self.dataset_competence_teachers)
@@ -27,6 +27,7 @@ class GenerateClassSchedule:
         self.timeslots_week = [timeslots_per_day for i in range(len(self.days))]
         self.class_types = ["AT", "AP", "AV"]
         self.genome_size = self.get_genome_size(self.dataset_classes_semester)
+        self.early_stopping = early_stopping
 
         self.classes_bit_length = self.get_bit_length(len(self.dataset_classes_semester))
         self.class_types_bit_length = self.get_bit_length(len(self.class_types))
@@ -63,6 +64,8 @@ class GenerateClassSchedule:
         
         elif semester == "odd":
             return dataset_classes[dataset_classes["ET"] % 2 != 0].reset_index(drop=True)
+        elif semester == None:
+            return dataset_classes
         
     def get_genome_size(self, dataset_classes_semester):
         genome_size = 0
@@ -182,12 +185,14 @@ class GenerateClassSchedule:
             return translation_string
         
     def get_violation_count_assigning_professor(self, genome):
+        self.incorrectly_assigned_professors = []
         violations = 0
         for class_scheduling in genome:
             professor = self.professors[class_scheduling['professor']]
             class_name = self.dataset_classes_semester['DISCIPLINA'][class_scheduling['class']]
             if class_name not in self.dict_competence_teachers[professor]:
                 violations += 1
+                self.incorrectly_assigned_professors.append({'class': class_name, 'professor': professor})
 
         return violations
     
@@ -199,8 +204,10 @@ class GenerateClassSchedule:
         return violations
     
     def get_violation_count_assigning_classes(self, genome):
+        self.incorrectly_assigned_classes = []
         violations = 0
         for index_class in range(len(self.dataset_classes_semester)):
+            violations_class = 0
             nr_at = {}
             nr_ap = {}
             nr_av = {}
@@ -229,13 +236,18 @@ class GenerateClassSchedule:
                         nr_av[class_group] -= 1
 
             for values in nr_at.values():
-                violations += abs(values)
-
+                violations_class += abs(values)
+                
             for values in nr_ap.values():
-                violations += abs(values)
+                violations_class += abs(values)
 
             for values in nr_av.values():
-                violations += abs(values)
+                violations_class += abs(values)
+
+            if violations_class > 0:
+                self.incorrectly_assigned_classes.append({'class': self.dataset_classes_semester['DISCIPLINA'][index_class], 'nr_at': nr_at, 'nr_ap': nr_ap, 'nr_av': nr_av})
+            
+            violations += violations_class
 
         return violations
     
@@ -244,26 +256,19 @@ class GenerateClassSchedule:
         violations = 0
         violations += self.get_violation_count_saturday_classes(hex_genome)
         violations += self.get_violation_count_assigning_professor(hex_genome)
-        # violations += self.get_violation_count_assigning_classes(hex_genome)
-
-        # if self.best_fitness_score > 0.3:
-        #     print("Stuck")
-        #     print("Number of violations of assigning professor: ", self.get_violation_count_assigning_professor(hex_genome))
-        #     print("Number of violations of assigning classes: ", self.get_violation_count_assigning_classes(hex_genome))
-        #     print("Number of violations of saturday classes: ", self.get_violation_count_saturday_classes(hex_genome))
-        #     translated_genome = self.translate_genome(genome, string_=True, chronological=False)
-        #     # order the dictionary based on the alphabetical order of the class name
-        #     translated_genome = sorted(translated_genome, key=lambda k: k['class'])
-        #     self.print_per_line(translated_genome)
-        #     # stop the program
-        #     exit()
-
+        violations += self.get_violation_count_assigning_classes(hex_genome)
         return 1/(1+violations)
+    
+    def enhance_assigning_classes(self,best_genome,incorrectly_assigned_classes):
+        print("Incorrectly assigned classes: ", incorrectly_assigned_classes)
 
+            
     def run_genetic_algorithm(self):
         self.generate_population(self.population_size)
+        fitness_scores = np.zeros(self.generation_limit)
         
         for i in range(self.generation_limit):
+            
             # sort the population based on the fitness score of each genome, make us of the numpy arrays
             self.population = self.population[np.argsort([self.calculate_fitness_score(genome) for genome in self.population])][::-1]
             print("Generation: ", i+1)
@@ -271,6 +276,23 @@ class GenerateClassSchedule:
                 break
 
             self.best_fitness_score = self.calculate_fitness_score(self.population[0])
+            # if the best fitness score has not improved after 500 generations, we stop the program
+            fitness_scores[i] = self.best_fitness_score
+            if i > self.early_stopping:
+                if np.all(fitness_scores[i-self.early_stopping:i] == self.best_fitness_score):
+                    print("Stuck")
+                    best_genome = self.population[0]
+
+                    incorrectly_assigned_classes = self.incorrectly_assigned_classes
+                    incorrectly_assigned_professors = self.incorrectly_assigned_professors
+
+                    nr_incorrectly_assigned_professors = len(incorrectly_assigned_professors)
+                    nr_incorrectly_assigned_classes = len(incorrectly_assigned_classes)
+                    print("Number of incorrectly assigned classes: ", nr_incorrectly_assigned_classes)
+                    if nr_incorrectly_assigned_classes > 0:
+                        self.enhance_assigning_classes(best_genome, incorrectly_assigned_classes)
+
+                    return best_genome, i+1
 
             print("Best fitness score: ", self.best_fitness_score)
 
@@ -383,8 +405,8 @@ input_dataset_classes = pd.read_csv('../data/ClassesNoDuplicates.csv', sep=';')
 input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
 input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
 # sort input dataset classes base on class name
-input_dataset_classes = input_dataset_classes.sort_values(by=['DISCIPLINA'])
-print(input_dataset_classes)
+# input_dataset_classes = input_dataset_classes.sort_values(by=['DISCIPLINA'])
+
 input_semester = "odd"
 input_timeslots_per_day = [
     "12:45-13:35",
@@ -398,13 +420,13 @@ input_timeslots_per_day = [
 
 days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday']
 
-input_professor_availability = {}
-for professor in input_dataset_competence_teachers['PROFESSOR CODE'].unique():
-    input_professor_availability[professor] = []
-    for day in days:
-        for timeslot in input_timeslots_per_day:
-            if np.random.choice([True, False], p=[0.42, 0.58]):
-                input_professor_availability[professor].append({'day': day, 'timeslot': timeslot})
+# input_professor_availability = {}
+# for professor in input_dataset_competence_teachers['PROFESSOR CODE'].unique():
+#     input_professor_availability[professor] = []
+#     for day in days:
+#         for timeslot in input_timeslots_per_day:
+#             if np.random.choice([True, False], p=[0.42, 0.58]):
+#                 input_professor_availability[professor].append({'day': day, 'timeslot': timeslot})
 
 # for professor in input_professor_availability:
 #     print("Professor: ", professor)
@@ -414,20 +436,25 @@ for professor in input_dataset_competence_teachers['PROFESSOR CODE'].unique():
     
 
 input_class_groups = ["A", "B"]
-input_generation_limit = 100000
+input_generation_limit = 3000
 input_fitness_limit = 1
 input_mutation_rate = 0.0075
 input_population_size = 10
+input_early_stopping = 2
 
 start = time.time()
 
 class_schedule = GenerateClassSchedule(dataset_classes=input_dataset_classes, dataset_competence_teachers=input_dataset_competence_teachers,
                                        dataset_professor_availability=None ,semester=input_semester, timeslots_per_day=input_timeslots_per_day, 
                                        class_groups=input_class_groups, generation_limit=input_generation_limit, fitness_limit=input_fitness_limit,
-                                       mutation_rate=input_mutation_rate,population_size=input_population_size)
+                                       mutation_rate=input_mutation_rate,population_size=input_population_size, early_stopping=input_early_stopping)
 end = time.time()
 
 print("Generations: ", class_schedule.generations)
 print("Time: ", end - start)
 print("Best solution: ")
 class_schedule.print_per_line(class_schedule.translate_genome(class_schedule.best_solution, string_=True, chronological=True))
+translated_genome = class_schedule.translate_genome(class_schedule.best_solution, string_=True, chronological=False)
+# transform the dictionary to a csv file
+translated_genome_df = pd.DataFrame(translated_genome)
+translated_genome_df.to_csv('../data/translated_genome.csv', sep=';', index=False)
