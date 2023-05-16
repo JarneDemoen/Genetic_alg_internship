@@ -40,8 +40,16 @@ class GenerateClassSchedule:
         self.best_fitness_score = 0
 
         self.population = np.zeros((self.population_size, self.genome_size, self.genome_part_bit_length), dtype=int)
-        self.best_solution, self.generations = self.run_genetic_algorithm()
 
+        self.best_solution, self.generations = self.run_genetic_algorithm()
+        self.fitness_score = self.calculate_fitness_score(self.best_solution)
+        self.translation_best_solution = self.translate_genome(self.best_solution, string_=True, chronological=True)
+        self.best_solution_hex = self.translate_genome(self.best_solution, hex_=True, chronological=True)
+
+        self.violation_count_assigning_classes = self.get_violation_count_assigning_classes(self.best_solution_hex)
+        self.violation_count_assigning_professor = self.get_violation_count_assigning_professor(self.best_solution_hex)
+        self.violation_count_saturday_classes = self.get_violation_count_saturday_classes(self.best_solution_hex)
+        
     def get_competence_teachers(self, dataset_competence_teachers):
         competence_teachers_dict = {}
         for professor in dataset_competence_teachers['PROFESSOR CODE'].unique():
@@ -110,6 +118,16 @@ class GenerateClassSchedule:
     def get_timeslot_part(self, class_scheduling):
         return class_scheduling[self.classes_bit_length+self.class_types_bit_length+self.class_groups_bit_length+self.professors_bit_length+self.days_bit_length:self.classes_bit_length+self.class_types_bit_length+self.class_groups_bit_length+self.professors_bit_length+self.days_bit_length+self.timeslots_per_day_bit_length]
 
+    def get_binary_code(self, binary_code, hex_value):
+        i = 0
+        while hex_value > 0:
+            binary_code[i] = hex_value % 2
+            hex_value = hex_value // 2
+            i += 1
+        # flip the binary code
+        binary_code = binary_code[::-1]
+        return binary_code
+
     def generate_binary_code(self, bit_length, db_length):
         binary_value = 100000
         binary_code = np.zeros(bit_length, dtype=int)
@@ -143,6 +161,39 @@ class GenerateClassSchedule:
     def generate_population(self, population_size):
         for i in range(population_size):
             self.population[i] = self.generate_genome(self.genome_size)
+
+    def translate_hex_to_binary(self,hex_genome):
+        # write a function that converts the hex genome to a binary genome
+        translation = np.zeros((len(hex_genome), self.genome_part_bit_length), dtype=int)
+        index = 0
+        for class_scheduling in hex_genome:
+            class_hex_value = class_scheduling['class']
+            class_type_hex_value = class_scheduling['class_type']
+            class_group_hex_value = class_scheduling['class_group']
+            professor_hex_value = class_scheduling['professor']
+            day_hex_value = class_scheduling['timeslot_day']
+            timeslot_hex_value = class_scheduling['timeslot']
+            
+            class_binary_code = np.zeros(self.classes_bit_length, dtype=int)
+            class_type_binary_code = np.zeros(self.class_types_bit_length, dtype=int)
+            class_group_binary_code = np.zeros(self.class_groups_bit_length, dtype=int)
+            professor_binary_code = np.zeros(self.professors_bit_length, dtype=int)
+            day_binary_code = np.zeros(self.days_bit_length, dtype=int)
+            timeslot_binary_code = np.zeros(self.timeslots_per_day_bit_length, dtype=int)
+
+            class_binary_value = self.get_binary_code(class_binary_code, class_hex_value)
+            class_type_binary_value = self.get_binary_code(class_type_binary_code, class_type_hex_value)
+            class_group_binary_value = self.get_binary_code(class_group_binary_code, class_group_hex_value)
+            professor_binary_value = self.get_binary_code(professor_binary_code, professor_hex_value)
+            day_binary_value = self.get_binary_code(day_binary_code, day_hex_value)
+            timeslot_binary_value = self.get_binary_code(timeslot_binary_code, timeslot_hex_value)
+
+            # put the binary values in a single numpy array
+            class_schedule_binary = np.concatenate((class_binary_value, class_type_binary_value, class_group_binary_value, professor_binary_value, day_binary_value, timeslot_binary_value))
+            translation[index] = class_schedule_binary
+            index += 1
+
+        return translation
 
     def translate_genome(self, genome, hex_= False, string_= False, chronological= False):
         translation_string = []
@@ -251,16 +302,35 @@ class GenerateClassSchedule:
 
         return violations
     
-    def calculate_fitness_score(self, genome, enhanced = False):
-        if not enhanced:
-            hex_genome = self.translate_genome(genome, hex_=True, chronological=True)
-        else:
-            hex_genome = genome
+    def calculate_fitness_score(self, genome):
+        hex_genome = self.translate_genome(genome, hex_=True, chronological=True)
         violations = 0
         violations += self.get_violation_count_saturday_classes(hex_genome)
         violations += self.get_violation_count_assigning_professor(hex_genome)
         violations += self.get_violation_count_assigning_classes(hex_genome)
         return 1/(1+violations)
+    
+    def enhance_assigning_professors(self,best_genome,incorrectly_assigned_professors):
+        for incorrectly_assigned_professor in incorrectly_assigned_professors:
+            professor = incorrectly_assigned_professor['professor']
+            class_name = incorrectly_assigned_professor['class']
+
+            professor_hex = np.where(np.array(self.professors) == professor)[0][0]
+            class_name_hex = np.where(self.dataset_classes_semester['DISCIPLINA'] == class_name)[0][0]
+            
+
+            for index in range(len(best_genome)):
+                if best_genome[index]['professor'] == professor_hex and best_genome[index]['class'] == class_name_hex:
+                    competent_teachers = []
+                    for prof_code in self.dict_competence_teachers:
+                        if class_name in self.dict_competence_teachers[prof_code]:
+                            competent_teachers.append(prof_code)
+                    new_professor = np.random.choice(competent_teachers)
+                    new_professor_hex = np.where(np.array(self.professors) == new_professor)[0][0]
+                    best_genome[index]['professor'] = new_professor_hex
+                    break
+
+        return best_genome
     
     def enhance_assigning_classes(self,best_genome,incorrectly_assigned_classes):
         to_be_replaced = []
@@ -286,7 +356,6 @@ class GenerateClassSchedule:
                 class_group = self.class_groups[class_scheduling['class_group']]
 
                 if class_name == to_be_replaced[index]['class'] and class_type == to_be_replaced[index]['class_type'] and class_group == to_be_replaced[index]['class_group']:
-                    print("Index to be replaced: ", index_to_be_replaced)
                     break
                 index_to_be_replaced += 1
 
@@ -306,6 +375,8 @@ class GenerateClassSchedule:
 
     def run_genetic_algorithm(self):
         self.generate_population(self.population_size)
+        hex_genome = self.translate_genome(self.population[0], hex_=True, chronological=True)
+        binary_genome = self.translate_hex_to_binary(hex_genome)
         fitness_scores = np.zeros(self.generation_limit)
         
         for i in range(self.generation_limit):
@@ -323,22 +394,24 @@ class GenerateClassSchedule:
                 if np.all(fitness_scores[i-self.early_stopping:i] == self.best_fitness_score):
                     print("Stuck")
                     best_genome = self.population[0]
-
-                    incorrectly_assigned_classes = self.incorrectly_assigned_classes
-                    incorrectly_assigned_professors = self.incorrectly_assigned_professors
-
                     hex_best_genome = self.translate_genome(best_genome, hex_=True, chronological=True)
 
                     nr_incorrectly_assigned_classes = self.get_violation_count_assigning_classes(hex_best_genome)
                     nr_incorrectly_assigned_teachers = self.get_violation_count_assigning_professor(hex_best_genome)
 
                     if nr_incorrectly_assigned_classes > 0:
-                        hex_best_genome = self.enhance_assigning_classes(hex_best_genome, incorrectly_assigned_classes)
+                        hex_best_genome = self.enhance_assigning_classes(hex_best_genome, self.incorrectly_assigned_classes)
 
-                    # calculate the fitness score of the best_genome:
-                    best_genome_fitness_score = self.calculate_fitness_score(hex_best_genome, enhanced=True)
-                    print("Best genome fitness score: ", best_genome_fitness_score)
-                    return hex_best_genome, i+1
+                    # update the incorrect things
+                    nr_incorrectly_assigned_classes = self.get_violation_count_assigning_classes(hex_best_genome)
+                    nr_incorrectly_assigned_teachers = self.get_violation_count_assigning_professor(hex_best_genome)
+                    
+                    if nr_incorrectly_assigned_teachers > 0:
+                        hex_best_genome = self.enhance_assigning_professors(hex_best_genome, self.incorrectly_assigned_professors)
+
+                    best_genome_binary = self.translate_hex_to_binary(hex_best_genome)
+                    
+                    return best_genome_binary, i+1
 
             print("Best fitness score: ", self.best_fitness_score)
 
@@ -370,8 +443,9 @@ class GenerateClassSchedule:
             self.population = next_generation
 
         self.population = self.population[np.argsort([self.calculate_fitness_score(genome) for genome in self.population])][::-1]
+        translation_best_solution = self.translate_genome(self.population[0], string_=True, chronological=True)
 
-        return self.population[0], i+1
+        return translation_best_solution, i+1, self.calculate_fitness_score(self.population[0])
     
     def select_parents_old(self, population, fitness_function):
         # calculate the fitness values for each genome in the population
@@ -486,7 +560,7 @@ input_generation_limit = 5000
 input_fitness_limit = 1
 input_mutation_rate = 0.0075
 input_population_size = 10
-input_early_stopping = 1
+input_early_stopping = 150
 
 start = time.time()
 
@@ -499,3 +573,8 @@ end = time.time()
 print("Generations: ", class_schedule.generations)
 print("Time: ", end - start)
 print("Best solution: ")
+class_schedule.print_per_line(class_schedule.translation_best_solution)
+print("Fitness score: ", class_schedule.fitness_score)
+print("Violation count assigning classes: ", class_schedule.violation_count_assigning_classes)
+print("Violation count assigning professor: ", class_schedule.violation_count_assigning_professor)
+print("Violation count saturday classes: ", class_schedule.violation_count_saturday_classes)

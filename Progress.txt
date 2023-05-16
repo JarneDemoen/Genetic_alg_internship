@@ -1,1 +1,1 @@
-- early stopping --> complete the solution with a conventional algorithm
+- early stopping --> complete the solution with a conventional algorithm --> WORKS! and speeds up the process when stuck!
