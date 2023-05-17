@@ -311,8 +311,11 @@ class GenerateClassSchedule:
             next_class = genome[i + 1]
             previous_class = genome[i - 1] if i > 0 else None
             nr_at = self.dataset_classes_semester['AT'][current_class['class']]
-            # when I'm at the last index, check if the previous class was the same as the current class
-            # TODO
+            # when I'm at the last index, check if the next class was the same as the current class, if the nr_at=3,the last class can have a different class type
+            if i == len(genome) - 2:
+                # TODO
+                pass
+        
             if (
                 current_class['class'] == next_class['class'] and
                 current_class['class_type'] == next_class['class_type'] and
