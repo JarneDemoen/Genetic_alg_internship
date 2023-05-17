@@ -304,12 +304,15 @@ class GenerateClassSchedule:
         return violations
     
     def get_violation_count_consecutive_classes(self,genome):
+        self.incorrectly_assigned_consecutive_classes = []
         violations = 0
         for i in range(len(genome) - 1):
             current_class = genome[i]
             next_class = genome[i + 1]
             previous_class = genome[i - 1] if i > 0 else None
-            
+            nr_at = self.dataset_classes_semester['AT'][current_class['class']]
+            # when I'm at the last index, check if the previous class was the same as the current class
+            # TODO
             if (
                 current_class['class'] == next_class['class'] and
                 current_class['class_type'] == next_class['class_type'] and
@@ -322,20 +325,28 @@ class GenerateClassSchedule:
                 ):
                     # Same class scheduled for 2 hours straight
                     continue
-                elif (
-                    current_class['timeslot_day'] == next_class['timeslot_day'] and
-                    current_class['timeslot'] + 2 == next_class['timeslot']
-                ):
-                    # Same class scheduled for 4 hours straight
-                    continue
+                # elif (
+                #     current_class['timeslot_day'] == next_class['timeslot_day'] and
+                #     current_class['timeslot'] + 2 == next_class['timeslot']
+                # ):
+                #     # Same class scheduled for 4 hours straight
+                #     continue
 
             else:
                 # if the previous class was the same as the current class, there is no violation because there are 2 consecutive classes
-                if previous_class is not None and current_class['class'] == previous_class['class'] and current_class['class_type'] == previous_class['class_type'] and current_class['professor'] == previous_class['professor'] and current_class['class_group'] == previous_class['class_group']:
+                if previous_class is not None and current_class['class'] == previous_class['class'] and current_class['class_type'] == previous_class['class_type'] and current_class['professor'] == previous_class['professor'] and current_class['class_group'] == previous_class['class_group'] and current_class['timeslot_day'] == previous_class['timeslot_day'] and current_class['timeslot'] - 1 == previous_class['timeslot']:
                     continue
 
+                if nr_at == 3 and current_class['class'] == next_class['class'] and current_class['professor'] == next_class['professor'] and current_class['class_group'] == next_class['class_group']:
+                    if (
+                    current_class['timeslot_day'] == next_class['timeslot_day'] and
+                    current_class['timeslot'] + 1 == next_class['timeslot']
+                    ):
+                        continue
+                
             # Increment violations count
             violations += 1
+            self.incorrectly_assigned_consecutive_classes.append({'class': self.dataset_classes_semester['DISCIPLINA'][current_class['class']], 'class_type': self.class_types[current_class['class_type']], 'professor': self.professors[current_class['professor']], 'class_group': self.class_groups[current_class['class_group']], 'timeslot_day': self.days[current_class['timeslot_day']], 'timeslot': self.timeslots_per_day[current_class['timeslot']]})
 
         return violations
     
@@ -481,7 +492,6 @@ class GenerateClassSchedule:
             self.population = next_generation
 
         self.population = self.population[np.argsort([self.calculate_fitness_score(genome) for genome in self.population])][::-1]
-        translation_best_solution = self.translate_genome(self.population[0], string_=True, chronological=True)
 
         return self.population[0], i+1,
     
@@ -594,11 +604,11 @@ days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday']
     
 
 input_class_groups = ["A", "B"]
-input_generation_limit = 5000
+input_generation_limit = 10000
 input_fitness_limit = 1
 input_mutation_rate = 0.0075
 input_population_size = 10
-input_early_stopping = 1000
+input_early_stopping = 500
 
 start = time.time()
 
@@ -617,3 +627,5 @@ print("Violation count assigning classes: ", class_schedule.violation_count_assi
 print("Violation count assigning professor: ", class_schedule.violation_count_assigning_professor)
 print("Violation count saturday classes: ", class_schedule.violation_count_saturday_classes)
 print("Violation count consecutive classes: ", class_schedule.violation_count_consecutive_classes)
+print("Incorrectly assigned consecutive classes: ")
+class_schedule.print_per_line(class_schedule.incorrectly_assigned_consecutive_classes)
