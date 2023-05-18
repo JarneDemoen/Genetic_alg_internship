@@ -303,50 +303,205 @@ class GenerateClassSchedule:
 
         return violations
     
-    def get_violation_count_consecutive_classes(self,genome):
+    def get_violation_count_consecutive_classes(self, genome):
+        for class_name in self.dataset_classes_semester['DISCIPLINA']:
+            # in the genome, find the dictionaries that have the same class name
+            class_genome = [class_scheduling for class_scheduling in genome if class_scheduling['class'] == np.where(self.dataset_classes_semester['DISCIPLINA'] == class_name)[0][0]]
+            # sort the dictionaries by timeslot
+            class_genome = sorted(class_genome, key=lambda k: k['timeslot'])
+            nr_at = self.dataset_classes_semester['AT'][np.where(self.dataset_classes_semester['DISCIPLINA'] == class_name)[0][0]]
+            
+            if nr_at == 1:
+                # check if all of the values of the dictionaries in the class_genome list are the same except for the timeslot and the class_type
+                for i in range(len(class_genome) - 1):
+                    if (
+                        class_genome[i]['professor'] == class_genome[i + 1]['professor'] and
+                        class_genome[i]['class_group'] == class_genome[i + 1]['class_group'] and
+                        class_genome[i]['timeslot_day'] == class_genome[i + 1]['timeslot_day'] and
+                        class_genome[i]['timeslot'] + 1 == class_genome[i + 1]['timeslot']
+                    ):
+                        continue
+                    # DONT MAKE USE OF THE CONTINUE, ONLY IF IT PASSES THE WHOLE LOOP AND IT REMAINED VALID, MAKE UE OF A BOOLEAN
+
+            if nr_at == 2 or nr_at == 4:
+                for i in range(len(class_genome) - 1):
+                    if (
+                        class_genome[i]['professor'] == class_genome[i + 1]['professor'] and
+                        class_genome[i]['class_group'] == class_genome[i + 1]['class_group'] and
+                        class_genome[i]['class_type'] == class_genome[i + 1]['class_type'] and
+                        class_genome[i]['timeslot_day'] == class_genome[i + 1]['timeslot_day'] and
+                        class_genome[i]['timeslot'] + 1 == class_genome[i + 1]['timeslot']
+                    ):
+                        continue
+
+            if nr_at == 3:
+                # remove the dictionary that doesn't have the AT class type
+                class_genome_at = [class_scheduling for class_scheduling in class_genome if class_scheduling['class_type'] == 0]
+                class_genome_nat = [class_scheduling for class_scheduling in class_genome if class_scheduling['class_type'] != 0]
+                for i in range(len(class_genome_at) - 1):
+                    if (
+                        class_genome_at[i]['professor'] == class_genome_at[i + 1]['professor'] and
+                        class_genome_at[i]['class_group'] == class_genome_at[i + 1]['class_group'] and
+                        class_genome_at[i]['timeslot_day'] == class_genome_at[i + 1]['timeslot_day'] and
+                        class_genome_at[i]['timeslot'] + 1 == class_genome_at[i + 1]['timeslot']
+                    ): pass
+                        
+                    
+                if len(class_genome_nat) == 1:
+                    # check if the timeslot of the nat class is before the first at or after the last at class
+                    if (
+                        class_genome_nat[0]['timeslot'] + 1 == class_genome_at[0]['timeslot'] or
+                        class_genome_nat[0]['timeslot'] - 1 == class_genome_at[-1]['timeslot']
+                    ):
+                        continue
+
+            # Increment violations count
+            violations += 1
+
+        return violations
+        
+
+    def get_violation_count_consecutive_classes_old(self, genome):
         self.incorrectly_assigned_consecutive_classes = []
         violations = 0
-        for i in range(len(genome) - 1):
-            current_class = genome[i]
-            next_class = genome[i + 1]
+        for i in range(len(genome)):
+            before_previous_class = genome[i - 2] if i > 1 else None
             previous_class = genome[i - 1] if i > 0 else None
+            current_class = genome[i]
+            next_class = genome[i + 1] if i < len(genome) - 1 else None
+            after_next_class = genome[i + 2] if i < len(genome) - 2 else None
             nr_at = self.dataset_classes_semester['AT'][current_class['class']]
-            # when I'm at the last index, check if the next class was the same as the current class, if the nr_at=3,the last class can have a different class type
-            if i == len(genome) - 2:
-                # TODO
-                pass
-        
-            if (
-                current_class['class'] == next_class['class'] and
-                current_class['class_type'] == next_class['class_type'] and
-                current_class['professor'] == next_class['professor'] and
-                current_class['class_group'] == next_class['class_group']
-            ):
-                if (
+
+            if nr_at == 2 or nr_at == 4:
+                if (next_class is not None and
+                    current_class['class'] == next_class['class'] and
+                    current_class['class_type'] == next_class['class_type'] and
+                    current_class['professor'] == next_class['professor'] and
+                    current_class['class_group'] == next_class['class_group'] and
                     current_class['timeslot_day'] == next_class['timeslot_day'] and
                     current_class['timeslot'] + 1 == next_class['timeslot']
                 ):
-                    # Same class scheduled for 2 hours straight
                     continue
-                # elif (
-                #     current_class['timeslot_day'] == next_class['timeslot_day'] and
-                #     current_class['timeslot'] + 2 == next_class['timeslot']
-                # ):
-                #     # Same class scheduled for 4 hours straight
-                #     continue
-
-            else:
-                # if the previous class was the same as the current class, there is no violation because there are 2 consecutive classes
-                if previous_class is not None and current_class['class'] == previous_class['class'] and current_class['class_type'] == previous_class['class_type'] and current_class['professor'] == previous_class['professor'] and current_class['class_group'] == previous_class['class_group'] and current_class['timeslot_day'] == previous_class['timeslot_day'] and current_class['timeslot'] - 1 == previous_class['timeslot']:
-                    continue
-
-                if nr_at == 3 and current_class['class'] == next_class['class'] and current_class['professor'] == next_class['professor'] and current_class['class_group'] == next_class['class_group']:
-                    if (
-                    current_class['timeslot_day'] == next_class['timeslot_day'] and
-                    current_class['timeslot'] + 1 == next_class['timeslot']
+            
+                else:
+                    # if the previous class was the same as the current class, there is no violation because there are 2 consecutive classes
+                    if (previous_class is not None and 
+                        current_class['class'] == previous_class['class'] and 
+                        current_class['class_type'] == previous_class['class_type'] and 
+                        current_class['professor'] == previous_class['professor'] and 
+                        current_class['class_group'] == previous_class['class_group'] and 
+                        current_class['timeslot_day'] == previous_class['timeslot_day'] and 
+                        current_class['timeslot'] - 1 == previous_class['timeslot']
                     ):
                         continue
-                
+
+            if nr_at == 3:
+                if (next_class is not None and
+                    current_class['class'] == next_class['class'] and
+                    current_class['class_type'] == next_class['class_type'] and
+                    current_class['professor'] == next_class['professor'] and
+                    current_class['class_group'] == next_class['class_group'] and
+                    current_class['timeslot_day'] == next_class['timeslot_day'] and
+                    current_class['timeslot'] + 1 == next_class['timeslot']
+                ):
+                    if (after_next_class is not None and
+                        next_class['class'] == after_next_class['class'] and
+                        next_class['class_type'] == after_next_class['class_type'] and
+                        next_class['professor'] == after_next_class['professor'] and
+                        next_class['class_group'] == after_next_class['class_group'] and
+                        next_class['timeslot_day'] == after_next_class['timeslot_day'] and
+                        next_class['timeslot'] + 1 == after_next_class['timeslot']
+                    ):
+                        last = genome[i + 3] if i < len(genome) - 3 else None
+                        if (
+                            last is not None and
+                            after_next_class['class'] == last['class'] and 
+                            after_next_class['professor'] == last['professor'] and 
+                            after_next_class['class_group'] == last['class_group'] and 
+                            after_next_class['timeslot_day'] == last['timeslot_day'] and 
+                            after_next_class['timeslot'] + 1 == last['timeslot']
+                        ) or (previous_class is not None and
+                            previous_class['class'] == current_class['class'] and 
+                            previous_class['professor'] == current_class['professor'] and 
+                            previous_class['class_group'] == current_class['class_group'] and 
+                            previous_class['timeslot_day'] == current_class['timeslot_day'] and 
+                            previous_class['timeslot'] + 1 == current_class['timeslot']
+                        ):
+                            continue
+                    elif (previous_class is not None and
+                        current_class['class'] == previous_class['class'] and
+                        current_class['class_type'] == previous_class['class_type'] and
+                        current_class['professor'] == previous_class['professor'] and
+                        current_class['class_group'] == previous_class['class_group'] and
+                        current_class['timeslot_day'] == previous_class['timeslot_day'] and
+                        current_class['timeslot'] - 1 == previous_class['timeslot']
+                    ):
+                        if (before_previous_class is not None and
+                            before_previous_class['class'] == previous_class['class'] and 
+                            before_previous_class['professor'] == previous_class['professor'] and 
+                            before_previous_class['class_group'] == previous_class['class_group'] and 
+                            before_previous_class['timeslot_day'] == previous_class['timeslot_day'] and 
+                            before_previous_class['timeslot'] + 1 == previous_class['timeslot']
+                        ) or (after_next_class is not None and
+                            next_class['class'] == after_next_class['class'] and 
+                            next_class['professor'] == after_next_class['professor'] and 
+                            next_class['class_group'] == after_next_class['class_group'] and 
+                            next_class['timeslot_day'] == after_next_class['timeslot_day'] and 
+                            next_class['timeslot'] + 1 == after_next_class['timeslot']
+                        ):
+                            continue
+                elif (previous_class is not None and
+                    current_class['class'] == previous_class['class'] and
+                    current_class['class_type'] == previous_class['class_type'] and
+                    current_class['professor'] == previous_class['professor'] and
+                    current_class['class_group'] == previous_class['class_group'] and
+                    current_class['timeslot_day'] == previous_class['timeslot_day'] and
+                    current_class['timeslot'] - 1 == previous_class['timeslot'] and
+
+                    previous_class['class'] == before_previous_class['class'] and
+                    previous_class['class_type'] == before_previous_class['class_type'] and
+                    previous_class['professor'] == before_previous_class['professor'] and
+                    previous_class['class_group'] == before_previous_class['class_group'] and
+                    previous_class['timeslot_day'] == before_previous_class['timeslot_day'] and
+                    previous_class['timeslot'] - 1 == before_previous_class['timeslot']
+                ):
+                    first = genome[i - 3] if i > 2 else None
+                    if (first is not None and
+                        first['class'] == before_previous_class['class'] and 
+                        first['professor'] == before_previous_class['professor'] and 
+                        first['class_group'] == before_previous_class['class_group'] and 
+                        first['timeslot_day'] == before_previous_class['timeslot_day'] and 
+                        first['timeslot'] + 1 == before_previous_class['timeslot']
+                    ) or (next_class is not None and
+                            next_class['class'] == current_class['class'] and 
+                            next_class['professor'] == current_class['professor'] and 
+                            next_class['class_group'] == current_class['class_group'] and 
+                            next_class['timeslot_day'] == current_class['timeslot_day'] and 
+                            next_class['timeslot'] - 1 == current_class['timeslot']
+                    ):
+                        continue
+
+            if nr_at == 1:
+                if (next_class is not None and
+                    current_class['class'] == next_class['class'] and
+                    current_class['professor'] == next_class['professor'] and
+                    current_class['class_group'] == next_class['class_group'] and
+                    current_class['timeslot_day'] == next_class['timeslot_day'] and
+                    current_class['timeslot'] + 1 == next_class['timeslot']
+                ):
+                    continue
+            
+                else:
+                    # if the previous class was the same as the current class, there is no violation because there are 2 consecutive classes
+                    if (previous_class is not None and 
+                        current_class['class'] == previous_class['class'] and 
+                        current_class['professor'] == previous_class['professor'] and 
+                        current_class['class_group'] == previous_class['class_group'] and 
+                        current_class['timeslot_day'] == previous_class['timeslot_day'] and 
+                        current_class['timeslot'] - 1 == previous_class['timeslot']
+                    ):
+                        continue
+
             # Increment violations count
             violations += 1
             self.incorrectly_assigned_consecutive_classes.append({'class': self.dataset_classes_semester['DISCIPLINA'][current_class['class']], 'class_type': self.class_types[current_class['class_type']], 'professor': self.professors[current_class['professor']], 'class_group': self.class_groups[current_class['class_group']], 'timeslot_day': self.days[current_class['timeslot_day']], 'timeslot': self.timeslots_per_day[current_class['timeslot']]})
