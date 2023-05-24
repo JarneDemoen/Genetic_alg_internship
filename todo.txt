@@ -1,6 +1,6 @@
 PRIORITY:
 - Implement other constraints once the algorithm seems to be working fast enough
-- AP classes should be seperated, AT together if there are multiple turma's --> conventional algorithm
+- AP classes should be seperated, AT together if there are multiple turma's
 - Professor availability
 
 EXTRA:
