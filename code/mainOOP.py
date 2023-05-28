@@ -290,13 +290,13 @@ class GenerateClassSchedule:
                         nr_av[class_group] -= 1
 
             for values in nr_at.values():
-                violations_class += abs(values)
+                violations_class += abs(values)*2
                 
             for values in nr_ap.values():
-                violations_class += abs(values)
+                violations_class += abs(values)*2
 
             for values in nr_av.values():
-                violations_class += abs(values)
+                violations_class += abs(values)*2
 
             if violations_class > 0:
                 self.incorrectly_assigned_classes.append({'class': self.dataset_classes_semester['DISCIPLINA'][index_class], 'nr_at': nr_at, 'nr_ap': nr_ap, 'nr_av': nr_av})
@@ -381,6 +381,60 @@ class GenerateClassSchedule:
     
     def get_violation_count_consecutive_classes(self, genome):
         violations = 0
+        class_names_indexes = set(x['class'] for x in genome)
+
+        for class_index in class_names_indexes:
+            nr_at_classes = self.dataset_classes_semester['AT'][class_index]
+            if nr_at_classes in (2, 4):
+                for turma in self.class_groups:
+                    turma = self.class_groups.index(turma)
+                    classes = [x for x in genome if x['class'] == class_index and x['class_group'] == turma]
+                    classes = sorted(classes, key=lambda x: (x['timeslot_day'], x['timeslot']))
+                    if classes == []:
+                        continue
+                    if nr_at_classes == 2:
+                        for index in range(0, len(classes) - 1, 2):
+                            if (classes[index]['timeslot_day'] != classes[index + 1]['timeslot_day'] or
+                                    classes[index]['class_type'] != classes[index + 1]['class_type'] or
+                                    classes[index]['professor'] != classes[index + 1]['professor'] or
+                                    classes[index]['timeslot'] != classes[index + 1]['timeslot'] - 1):
+                                violations += 4
+                    else:
+                        for index in range(0, len(classes) - 1):
+                            if (classes[index]['timeslot_day'] != classes[index + 1]['timeslot_day'] or
+                                    classes[index]['class_type'] != classes[index + 1]['class_type'] or
+                                    classes[index]['professor'] != classes[index + 1]['professor'] or
+                                    classes[index]['timeslot'] != classes[index + 1]['timeslot'] - 1):
+                                violations += 4
+            elif nr_at_classes in (1, 3):
+                for turma in self.class_groups:
+                    turma = self.class_groups.index(turma)
+                    classes_at = [x for x in genome if x['class'] == class_index and x['class_group'] == turma and x['class_type'] == 0]
+                    remaining_classes = [x for x in genome if x['class'] == class_index and x['class_group'] == turma and x['class_type'] != 0]
+                    classes_at = sorted(classes_at, key=lambda x: (x['timeslot_day'], x['timeslot']))
+                    if classes_at == []:
+                        continue
+                    for index in range(0, len(classes_at) - 1):
+                        if (classes_at[index]['timeslot_day'] != classes_at[index + 1]['timeslot_day'] or
+                                classes_at[index]['professor'] != classes_at[index + 1]['professor'] or
+                                classes_at[index]['timeslot'] != classes_at[index + 1]['timeslot'] - 1):
+                            violations += 4
+                    if nr_at_classes == 3:
+                        for remaining_class in remaining_classes:
+                            if remaining_class['timeslot_day'] != classes_at[-1]:
+                                violations += 4
+                            else:
+                                if (remaining_class['timeslot'] != classes_at[-1]['timeslot'] + 1 and
+                                        remaining_class['timeslot'] != classes_at[0]['timeslot'] - 1):
+                                    if (remaining_class['professor'] != classes_at[-1]['professor'] and
+                                            remaining_class['professor'] != classes_at[0]['professor']):
+                                        violations += 4
+
+        return violations
+
+
+    def get_violation_count_consecutive_classes_old(self, genome):
+        violations = 0
         # genome = self.translate_hex_to_binary(genome)
         # genome = self.translate_genome(genome, string_=True, chronological=True)
         class_names_indexes = set([x['class'] for x in genome])
@@ -390,6 +444,7 @@ class GenerateClassSchedule:
             # 1. AT = 2
             if nr_at_classes == 2:
                 for turma in self.class_groups:
+                    turma = self.class_groups.index(turma)
                     classes = [x for x in genome if x['class'] == class_index and x['class_group'] == turma]
                     # sort the classes on timeslot_day and timeslot
                     classes = sorted(classes, key=lambda x: (x['timeslot_day'], x['timeslot']))
@@ -402,9 +457,10 @@ class GenerateClassSchedule:
                             classes[index]['timeslot'] != classes[index + 1]['timeslot'] - 1):
                             violations += 1
 
-            # 2. AT = 2
-            elif nr_at_classes == 2:
+            # 2. AT = 4
+            elif nr_at_classes == 4:
                 for turma in self.class_groups:
+                    turma = self.class_groups.index(turma)
                     classes = [x for x in genome if x['class'] == class_index and x['class_group'] == turma]
                     # sort the classes on timeslot_day and timeslot
                     classes = sorted(classes, key=lambda x: (x['timeslot_day'], x['timeslot']))
@@ -420,10 +476,42 @@ class GenerateClassSchedule:
             # 3. AT = 1
             elif nr_at_classes == 1:
                 for turma in self.class_groups:
-                    classes
+                    turma = self.class_groups.index(turma)
+                    classes = [x for x in genome if x['class'] == class_index and x['class_group'] == turma]
+                    classes = sorted(classes, key=lambda x: (x['timeslot_day'], x['timeslot']))
+                    if classes == []:
+                        continue
+                    for index in range(0, len(classes) - 1):
+                        if (classes[index]['timeslot_day'] != classes[index + 1]['timeslot_day'] or 
+                            classes[index]['professor'] != classes[index + 1]['professor'] or
+                            classes[index]['timeslot'] != classes[index + 1]['timeslot'] - 1):
+                            violations += 1
 
             # 3. AT = 3
+            elif nr_at_classes == 3:
+                for turma in self.class_groups:
+                    turma = self.class_groups.index(turma)
+                    classes_at = [x for x in genome if x['class'] == class_index and x['class_group'] == turma and x['class_type'] == 0]
+                    remaining_classes = [x for x in genome if x['class'] == class_index and x['class_group'] == turma and x['class_type'] != 0]
+                    classes = sorted(classes, key=lambda x: (x['timeslot_day'], x['timeslot']))
+                    if classes == []:
+                        continue
+                    for index in range(0, len(classes_at) - 1):
+                        if (classes_at[index]['timeslot_day'] != classes_at[index + 1]['timeslot_day'] or 
+                            classes_at[index]['professor'] != classes_at[index + 1]['professor'] or
+                            classes_at[index]['timeslot'] != classes_at[index + 1]['timeslot'] - 1):
+                            violations += 1
+                    for remaining_class in remaining_classes:
+                        if remaining_class['timeslot_day'] != classes_at[-1]:
+                            violations += 1
 
+                        else:
+                            if (remaining_class['timeslot'] != classes_at[-1]['timeslot'] + 1 and
+                                remaining_class['timeslot'] != classes_at[0]['timeslot'] - 1):
+                                if (remaining_class['professor'] != classes_at[-1]['professor'] and
+                                    remaining_class['professor'] != classes_at[0]['professor']):
+                                    violations += 1
+                            
         return violations
     
     def get_violation_count_at_classes(self, genome):
@@ -436,7 +524,7 @@ class GenerateClassSchedule:
                 for index in range(len(classes_a)):
                     if classes_a[index]['timeslot_day'] == classes_b[index]['timeslot_day'] and classes_a[index]['timeslot'] == classes_b[index]['timeslot']:
                         continue
-                    violations += 1
+                    violations += 2
             else:
                 violations += len(classes_a) + len(classes_b)
                 
@@ -467,17 +555,6 @@ class GenerateClassSchedule:
 
     def run_genetic_algorithm(self):
         self.generate_population(self.population_size)
-        for genome in self.population:
-            hex_genome = self.translate_genome(genome, hex_=True, chronological=True)
-            nr_incorrectly_assigned_classes = self.get_violation_count_assigning_classes(hex_genome)
-            index = np.where(self.population == genome)[0][0]
-            hex_genome_enhanced = np.array(self.enhance_assigning_classes(hex_genome, self.incorrectly_assigned_classes))
-            enhanced_genome_binary = self.translate_hex_to_binary(hex_genome_enhanced)
-            self.population[index] = enhanced_genome_binary
-            # nr_incorrectly_assigned_classes_after = self.get_violation_count_assigning_classes(self.translate_genome(self.population[index], hex_=True, chronological=True))
-            # print("Before: ", nr_incorrectly_assigned_classes, " After: ", nr_incorrectly_assigned_classes_after)
-        # hex_genome = self.translate_genome(self.population[0], hex_=True, chronological=True)
-        # binary_genome = self.translate_hex_to_binary(hex_genome)
         fitness_scores = np.zeros(self.generation_limit)
         
         for i in range(self.generation_limit):
@@ -495,20 +572,6 @@ class GenerateClassSchedule:
                     print("Stuck")
                     best_genome = self.population[0]
                     hex_best_genome = self.translate_genome(best_genome, hex_=True, chronological=True)
-
-                    # nr_incorrectly_assigned_classes = self.get_violation_count_assigning_classes(hex_best_genome)
-                    # # nr_incorrectly_assigned_teachers = self.get_violation_count_assigning_professor(hex_best_genome)
-
-                    # if nr_incorrectly_assigned_classes > 0:
-                    #     hex_best_genome = self.enhance_assigning_classes(hex_best_genome, self.incorrectly_assigned_classes)
-
-                    # # update the incorrect things
-                    # nr_incorrectly_assigned_classes = self.get_violation_count_assigning_classes(hex_best_genome)
-                    # # nr_incorrectly_assigned_teachers = self.get_violation_count_assigning_professor(hex_best_genome)
-                    
-                    # # if nr_incorrectly_assigned_teachers > 0:
-                    # #     hex_best_genome = self.enhance_assigning_professors(hex_best_genome, self.incorrectly_assigned_professors)
-
                     best_genome_binary = self.translate_hex_to_binary(hex_best_genome)
                     
                     return best_genome_binary, i+1
@@ -623,8 +686,6 @@ class GenerateClassSchedule:
 input_dataset_classes = pd.read_csv('../data/ClassesNoDuplicates.csv', sep=';')
 input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
 input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
-# sort input dataset classes base on class name
-# input_dataset_classes = input_dataset_classes.sort_values(by=['DISCIPLINA'])
 
 input_semester = "even"
 input_timeslots_per_day = [
@@ -639,13 +700,13 @@ input_timeslots_per_day = [
 
 days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday']
 
-input_professor_availability = {}
-for professor in input_dataset_competence_teachers['PROFESSOR CODE'].unique():
-    input_professor_availability[professor] = []
-    for day in days:
-        for timeslot in input_timeslots_per_day:
-            if np.random.choice([True, False], p=[0.42, 0.58]):
-                input_professor_availability[professor].append({'day': day, 'timeslot': timeslot})
+# input_professor_availability = {}
+# for professor in input_dataset_competence_teachers['PROFESSOR CODE'].unique():
+#     input_professor_availability[professor] = []
+#     for day in days:
+#         for timeslot in input_timeslots_per_day:
+#             if np.random.choice([True, False], p=[0.42, 0.58]):
+#                 input_professor_availability[professor].append({'day': day, 'timeslot': timeslot})
 # for professor in input_professor_availability:
 #     print("Professor: ", professor)
 #     for i in input_professor_availability[professor]:
@@ -657,9 +718,8 @@ input_class_groups = ["A", "B"]
 input_generation_limit = 100000
 input_fitness_limit = 1
 input_mutation_rate = 0.0075
-input_mutation_rate = 0.01
-input_population_size = 16
-input_early_stopping = 250
+input_population_size = 30
+input_early_stopping = 300
 
 start = time.time()
 
