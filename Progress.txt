@@ -1,3 +1,3 @@
-- early stopping --> complete the solution with a conventional algorithm --> WORKS! and speeds up the process when stuck!
-- Faster result with even semester data only
-- Implementation of the consecutive classes constraint
+- Implementation of the professor availability
+- Add a constraint where only virtual classes can be scheduled on the first timeslot
+- Test the algorithm on the odd semesters too

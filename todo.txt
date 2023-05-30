@@ -1,23 +1,2 @@
-PRIORITY:
-- Implement other constraints once the algorithm seems to be working fast enough
-- AP classes should be seperated, AT together if there are multiple turma's
-- Professor availability
-
-EXTRA:
-- With the consecutive scheduled courses, make sure they are not scheduled before and right after the lunch or diner break
-- Make sure the classes are not spread too much. For example if a class is given from 8am until 10pm and another class is scheduled 
-that day, it would be better to schedule it from 10am until 12am rather than scheduling that last course at night from 7pm until 9pm.
-- A teacher can teach multiple courses but make sure the teacher doesnt have to teach too much in a day.
-
-I will first give you some information and then you solve the problem when I say so.
-The information is the following:
-Paste genome
-paste timeslot day
-paste timeslots
-paste input_professor_availability
-paste professor competence
-I have a genome that consists of a list of dictionaries. each dictionary contains the following information:
-{'class': 'HF222', 'class_type': 'AT', 'class_group': 'A', 'professor': 13.034, 'timeslot_day': 'Monday', 'timeslot': '12:45-13:35', 'et': 1},
-with class is the class name and et is etapa which means semester. Now I have to assign a correct timeslot_day, professor and timeslot to each class.
-There are some constraints that I have to take into account: Virtual classes have class_type AV and should be scheduled on the timeslots with index 0,1,2 or 3.
-These virtual classes have to be scheduled on 2 consecutive timeslots and they have to have the same professor.The professor has to be available on the timeslots too.
+- Implement local search algorithm to find the best solution for the problem, algorithm seems to 
+be stuck at a local optimum (starting from 7 constraints = score of 0.125)
