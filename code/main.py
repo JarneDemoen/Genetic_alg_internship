@@ -1,519 +1,503 @@
-# imports
-import random
+# imports 
+import numpy as np
 import pandas as pd
-from random import choices, randint
-import os
+import os 
 import time
 
-# making sure the file is in the same directory as the script
+# making sure the current working directory is the same as the file path
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-# Inputs user
-semester = "uneven"
-timeslots_per_day = [
-    "19:00-19:50",
-    "19:50-20:40",
-    "20:55-21:45",
-    "21:45-22:35"]
+class GenerateClassSchedule:
+    def __init__(self, dataset_classes, dataset_competence_teachers, dataset_professor_availability, semester, 
+                 timeslots_per_day, class_groups, generation_limit, fitness_limit, mutation_rate, population_size, early_stopping):
+        self.dataset_classes = dataset_classes
+        self.dataset_competence_teachers = dataset_competence_teachers
+        self.dict_competence_teachers = self.get_competence_teachers(self.dataset_competence_teachers)
+        self.dataset_professor_availability = dataset_professor_availability
+        self.semester = semester
+        self.timeslots_per_day = timeslots_per_day
+        self.generation_limit = generation_limit
+        self.fitness_limit = fitness_limit
+        self.mutation_rate = mutation_rate
+        self.population_size = population_size
+        self.professors = self.dataset_competence_teachers['PROFESSOR CODE'].unique()
+        self.days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday']
+        self.class_types = ['AT', 'AP', 'AV']
+        self.class_groups = class_groups
+        self.dataset_classes_semester = self.get_classes_semester(self.dataset_classes, self.semester)
+        self.timeslots_week = [timeslots_per_day for i in range(len(self.days))]
+        self.early_stopping = early_stopping
+        self.dataset_classes_organized = self.organize_classes(self.dataset_classes_semester)
 
-days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-class_groups = ["A","B"]
-
-# global variables
-dataset_courseSchedule = pd.read_csv('../data/ClassesNoDuplicates.csv', sep=';')
-dataset_courseSchedule = dataset_courseSchedule.sort_values(by=['ET'])
-dataset_classesPP = pd.read_csv('../data/ClassesPP.csv', sep=';')
-dataset_professors = pd.read_csv('../data/Professors.csv', sep=';')
-dataset_courseSchedule_semester_uneven = dataset_courseSchedule[dataset_courseSchedule['ET'] % 2 != 0]
-dataset_courseSchedule_semester_even = dataset_courseSchedule[dataset_courseSchedule['ET'] % 2 == 0]
-timeslots = [timeslots_per_day for i in range(len(days))]
-class_types = ["AT", "AP", "AV"]
-
-genome_size_even = 0
-genome_size_uneven = 0
-genome_size = 0
-
-for class_ in dataset_courseSchedule['DISCIPLINA']:
-    etapa = dataset_courseSchedule[dataset_courseSchedule['DISCIPLINA'] == class_]['ET'].values[0]
-    nr_at = dataset_courseSchedule[dataset_courseSchedule['DISCIPLINA'] == class_]['AT'].values[0]
-    nr_ap = dataset_courseSchedule[dataset_courseSchedule['DISCIPLINA'] == class_]['AP'].values[0]
-    nr_av = dataset_courseSchedule[dataset_courseSchedule['DISCIPLINA'] == class_]['AV'].values[0]
-    if etapa % 2 == 0:
-        if etapa < 4:
-            genome_size_even += len(class_groups) * (nr_at + nr_ap + nr_av)
-        else:
-            genome_size_even += nr_at + nr_ap + nr_av
-
-    else:
-        if etapa < 4:
-            genome_size_uneven += len(class_groups) * (nr_at + nr_ap + nr_av)
-        else:
-            genome_size_uneven += nr_at + nr_ap + nr_av
+        self.classes_assigned = []
+        self.genome_size = len(self.dataset_classes_organized)
     
-if semester == "even":
-    dataset_courseSchedule_semester = dataset_courseSchedule_semester_even
-    genome_size = genome_size_even
+        self.classes_bit_length = self.get_bit_length(len(self.dataset_classes_organized))
+        self.days_bit_length = self.get_bit_length(len(self.days))
+        self.timeslots_per_day_bit_length = self.get_bit_length(len(self.timeslots_per_day))
+        self.genome_part_bit_length = self.classes_bit_length + self.days_bit_length + self.timeslots_per_day_bit_length
+        self.class_hex_value = -1
+        self.best_fitness_score = 0
 
-elif semester == "uneven":
-    dataset_courseSchedule_semester = dataset_courseSchedule_semester_uneven
-    genome_size = genome_size_uneven
-
-professor_classes = {}
-for professor in dataset_professors['CODE']:
-    professor_classes[professor] = []
-    for index in range(len(dataset_classesPP)):
-        if dataset_classesPP['PROFESSOR CODE'][index] == professor:
-            professor_classes[professor].append(dataset_classesPP['DISCIPLINA'][index])
-
-professor_availability = {}
-for professor in dataset_professors['CODE']:
-    professor_availability[professor] = []
-    for day in days:
-        for timeslot in timeslots_per_day:
-            # with a probability of 0.5 the professor is available
-            if choices([True, False], weights=[0.5, 0.5], k=1)[0]:
-                professor_availability[professor].append(day + "-" + timeslot)
-
-# functions
-def generate_bit_length(db_length):
-    value = 0
-    for i in range(10):
-        value += 2**i
-        if value >= db_length:
-            return i+1
+        self.population = np.zeros((self.population_size, self.genome_size, self.genome_part_bit_length), dtype=int)
         
-def get_hex_value(binary):
-    # reverse the encoded_part
-    reverse_encoded_part = binary[::-1]
-    hex_value = 0
-    i = 0
-    for bit in reverse_encoded_part:
-        hex_value += bit*2**i
-        i += 1
-    return hex_value
+        self.best_solution, self.generations = self.run_genetic_algorithm()
+        self.fitness_score = self.calculate_fitness_score(self.best_solution)
+        self.translation_best_solution = self.translate_genome(self.best_solution, string_=True, chronological=True)
+        self.best_solution_hex = self.translate_genome(self.best_solution, hex_=True, chronological=True)
+
+        self.violation_count_saturday_classes = self.get_violation_count_saturday_classes(self.best_solution_hex)
+        self.violation_count_conflicting_classes = self.get_violation_count_conflicting_classes(self.best_solution_hex)
+        self.violation_count_assigning_classes = self.get_violation_count_assigning_classes(self.best_solution_hex)
+        self.violation_count_timeslot_virtual_classes = self.get_violation_count_timeslot_virtual_classes(self.best_solution_hex)
+
+    def print_per_line(self, genome):
+        for i in genome:
+            print(i)
         
-def get_class_part(class_scheduling):
-    return class_scheduling[:len_classes_encoding]
-
-def get_class_type_part(class_scheduling):
-    return class_scheduling[len_classes_encoding: len_classes_encoding+len_class_types_encoding]
-
-def get_class_group_part(class_scheduling):
-    return class_scheduling[len_classes_encoding+len_class_types_encoding: len_classes_encoding+len_class_types_encoding+len_class_groups_encoding]
-
-def get_professor_part(class_scheduling):
-    return class_scheduling[len_classes_encoding+len_class_types_encoding+len_class_groups_encoding:len_classes_encoding+len_class_types_encoding+len_class_groups_encoding+len_professors_encoding]
-
-def get_timeslot_day_part(class_scheduling):
-    return class_scheduling[len_classes_encoding+len_class_types_encoding+len_class_groups_encoding+len_professors_encoding:len_classes_encoding+len_class_types_encoding+len_class_groups_encoding+len_professors_encoding+len_timeslots_day_encoding]
-
-def get_timeslot_part(class_scheduling):
-    return class_scheduling[len_classes_encoding+len_class_types_encoding+len_class_groups_encoding+len_professors_encoding+len_timeslots_day_encoding:]
-        
-def translate_genome(genome, hex_= False, string_= False, chronological = False):
+    def get_competence_teachers(self, dataset_competence_teachers):
+        competence_teachers_dict = {}
+        for professor in dataset_competence_teachers['PROFESSOR CODE'].unique():
+            competence_teachers_dict[professor] = []
+            for index in range(len(dataset_competence_teachers)):
+                if dataset_competence_teachers['PROFESSOR CODE'][index] == professor:
+                    competence_teachers_dict[professor].append(dataset_competence_teachers['DISCIPLINA'][index])
+        return competence_teachers_dict
     
-    translation_string = []
-    translation_hex = []
-    for class_scheduling in genome:
-        class_index = get_hex_value(get_class_part(class_scheduling))
-        class_type_index = get_hex_value(get_class_type_part(class_scheduling))
-        class_group_index = get_hex_value(get_class_group_part(class_scheduling))
-        professor_index = get_hex_value(get_professor_part(class_scheduling))
-        timeslot_day_index = get_hex_value(get_timeslot_day_part(class_scheduling))
-        timeslot_index = get_hex_value(get_timeslot_part(class_scheduling))
-
-        if class_index >= len(dataset_courseSchedule_semester) or class_type_index >= len(class_types) or class_group_index >= len(class_groups) or professor_index >= len(dataset_professors) or timeslot_day_index >= len(days) or timeslot_index >= len(timeslots_per_day):
-            return False
-
-        if dataset_courseSchedule_semester['ET'][class_index] >= 4:
-            class_group_index = 0
-
-        if hex_:
-            translation_hex.append({'class': class_index, 'class_type': class_type_index, 'class_group': class_group_index, 'professor': professor_index, 'timeslot_day': timeslot_day_index, 'timeslot': timeslot_index, 'et': dataset_courseSchedule_semester['ET'][class_index]})
-            if chronological:
-                translation_hex = sorted(translation_hex, key=lambda k: (k['timeslot_day'], k['timeslot']))
-
-        elif string_:
-            class_translation = dataset_courseSchedule_semester['DISCIPLINA'][class_index]
-            class_type_translation = class_types[class_type_index]
-            class_groups_translation = class_groups[class_group_index]
-            professor_translation = dataset_professors['CODE'][professor_index]
-            timeslot_day_translation = days[timeslot_day_index]
-            timeslot_translation = timeslots_per_day[timeslot_index]
-
-            translation_string.append({'class': class_translation, 'class_type': class_type_translation, 'class_group': class_groups_translation, 'professor': professor_translation, 'timeslot_day': timeslot_day_translation, 'timeslot': timeslot_translation, 'et': dataset_courseSchedule_semester['ET'][class_index]})
-            
-            if chronological:
-                translation_string = sorted(translation_string, key=lambda k: (days.index(k['timeslot_day']), k['timeslot']))
-            
-    if hex_:
-        return translation_hex
-    if string_:
-        return translation_string
+    def get_classes_semester(self, dataset_classes, semester):
+        if semester == "even":
+            return dataset_classes[dataset_classes["ET"] % 2 == 0].reset_index(drop=True)
         
-    
-        
-dataset_courseSchedule_semester = dataset_courseSchedule_semester.reset_index(drop=True)
-len_classes_encoding = generate_bit_length(len(dataset_courseSchedule_semester))
-len_class_types_encoding = generate_bit_length(len(class_types))
-len_class_groups_encoding = generate_bit_length(len(class_groups))
-len_professors_encoding = generate_bit_length(len(dataset_professors))
-len_timeslots_day_encoding = generate_bit_length(len(days))
-len_timeslots_encoding = generate_bit_length(len(timeslots_per_day))
+        elif semester == "odd":
+            return dataset_classes[dataset_classes["ET"] % 2 != 0].reset_index(drop=True)
+        elif semester == None:
+            return dataset_classes
 
-def generate_binary(length, db):
-    binary_value = 100000
-    binary_part = []
-    while binary_value >= len(db):
+    def get_hex_value(self,binary_code):
+        # reverse the encoded_part
+        reverse_encoded_part = binary_code[::-1]
+        hex_value = 0
         i = 0
-        binary_part = choices([0,1], k=length)
-        binary_value = 0
-        reverse_binary_part = binary_part[::-1]
-        for bit in reverse_binary_part:
-            binary_value += bit*2**i
+        for bit in reverse_encoded_part:
+            hex_value += bit*2**i
             i += 1
-    return binary_part
+        return hex_value
 
-def create_genome_part():
-    binary_class = generate_binary(len_classes_encoding, dataset_courseSchedule_semester)
-    binary_class_type = generate_binary(len_class_types_encoding, class_types)
-    binary_class_group = generate_binary(len_class_groups_encoding, class_groups)
-    binary_professor = generate_binary(len_professors_encoding, dataset_professors)
-    binary_timeslot_day = generate_binary(len_timeslots_day_encoding, days)
-    binary_timeslot = generate_binary(len_timeslots_encoding, timeslots_per_day)
-    genome = binary_class + binary_class_type + binary_class_group + binary_professor + binary_timeslot_day + binary_timeslot
-    return genome
+    def organize_classes(self, dataset_classes):
+        organized_classes = []
+        unique_classes = dataset_classes['DISCIPLINA'].unique()
 
-def print_per_line(translation):
-    for class_scheduling in translation:
-        print(class_scheduling)
+        for unique_class in unique_classes:
+            nr_at_classes = dataset_classes[dataset_classes['DISCIPLINA'] == unique_class]['AT'].max()
+            nr_ap_classes = dataset_classes[dataset_classes['DISCIPLINA'] == unique_class]['AP'].max()
+            nr_av_classes = dataset_classes[dataset_classes['DISCIPLINA'] == unique_class]['AV'].max()
+            classes = {'AT': nr_at_classes, 'AP': nr_ap_classes, 'AV': nr_av_classes}
+            semester = dataset_classes[dataset_classes['DISCIPLINA'] == unique_class]['ET'].max()
+            class_types = [key for key, value in classes.items() if value != 0]
 
-def generate_genome(size):
-    return [create_genome_part() for i in range(size)]
+            if nr_at_classes == 1:
+                if semester < 4:
+                    organized_classes.append({'class': unique_class,'class_types':class_types,'class_groups': self.class_groups})
+                else:
+                    organized_classes.append({'class': unique_class,'class_types':class_types,'class_groups': ['A']})
 
-def generate_population(population_size):
-    population = []
-    for i in range(population_size):
-        population.append(generate_genome(genome_size))
-    return population
+            if nr_at_classes in [2,4]:
+                for class_type in class_types:
+                    if semester < 4:
+                        if class_type == "AT":
+                            for i in range(int(nr_at_classes/2)):
+                                organized_classes.append({'class': unique_class,'class_types':class_type,'class_groups': self.class_groups})
+                        else:
+                            for class_group in self.class_groups:
+                                organized_classes.append({'class': unique_class,'class_types':class_type,'class_groups': class_group})
+                    else:
+                        for i in range(int(nr_at_classes/2)):
+                            organized_classes.append({'class': unique_class,'class_types':class_type,'class_groups': ['A']})
 
-# functions to determine the fitness of a genome
-
-def get_violation_count_assigning_professor(genome):
-    # print("Professor classes")
-    # print(professor_classes)
-    # print("------------------")
-    violations = 0
-    for class_scheduling in genome:
-        professor = class_scheduling['professor']
-        class_name = class_scheduling['class'][:5]
-        if class_name not in professor_classes[professor]:
-            violations += 1
-            # print(f"The professor {professor} is not competent of teaching {class_name}")
-
-    return violations
-
-
-def get_violation_count_class_scheduling(genome):
-    violations = 0
-    for index_class in range(len(dataset_courseSchedule_semester)):
-        nr_at = {}
-        nr_ap = {}
-        nr_av = {}
-
-        if dataset_courseSchedule_semester['ET'][index_class] >= 4:
-            class_groups_copy = ['A']
-        else:
-            class_groups_copy = class_groups
-
-        for class_group in class_groups_copy:
-            nr_at[class_group] = dataset_courseSchedule_semester['AT'][index_class]
-            nr_ap[class_group] = dataset_courseSchedule_semester['AP'][index_class]
-            nr_av[class_group] = dataset_courseSchedule_semester['AV'][index_class]
-
-        for class_scheduling in genome:
-            if class_scheduling['class'] == dataset_courseSchedule_semester['DISCIPLINA'][index_class]:
-                if class_scheduling['class_type'] == "AT":
-                    nr_at[class_scheduling['class_group']] -= 1
-                elif class_scheduling['class_type'] == "AP":
-                    nr_ap[class_scheduling['class_group']] -= 1
-                elif class_scheduling['class_type'] == "AV":
-                    nr_av[class_scheduling['class_group']] -= 1
+            if nr_at_classes == 3:
+                if semester < 4:
+                    organized_classes.append({'class': unique_class,'class_types':['AT'],'class_groups': self.class_groups})
+                    organized_classes.append({'class': unique_class,'class_types':class_types,'class_groups': self.class_groups})
+                else:
+                    organized_classes.append({'class': unique_class,'class_types':['AT'],'class_groups': ['A']})
+                    organized_classes.append({'class': unique_class,'class_types':class_types,'class_groups': ['A']})
         
-        # the number of the violations is equal to the sum of all of the absolute values in the dictionaries
-        for values in nr_at.values():
-            violations += abs(values)
+        return organized_classes
+    
+    def get_binary_code(self, binary_code, hex_value):
+        i = 0
+        while hex_value > 0:
+            binary_code[i] = hex_value % 2
+            hex_value = hex_value // 2
+            i += 1
+        # flip the binary code
+        binary_code = binary_code[::-1]
+        return binary_code
 
-        for values in nr_ap.values():
-            violations += abs(values)
+    def get_bit_length(self, db_size):
+        value = 0
+        for i in range(10):
+            value += 2**i
+            if value >= db_size:
+                return i+1     
 
-        for values in nr_av.values():
-            violations += abs(values)
-       
-        # print("Class: ", dataset_courseSchedule_semester['DISCIPLINA'][index_class])
-        # print("nr_at: ", nr_at)
-        # print("nr_ap: ", nr_ap)
-        # print("nr_av: ", nr_av)
-        # print("Violations: ", violations)
-        # print("")
-    return violations
+    def get_class_part(self, class_scheduling):
+        return class_scheduling[:self.classes_bit_length]
+    
+    def get_day_part(self, class_scheduling):
+        return class_scheduling[self.classes_bit_length:self.classes_bit_length+self.days_bit_length]
+    
+    def get_timeslot_part(self, class_scheduling):
+        return class_scheduling[self.classes_bit_length+self.days_bit_length:self.classes_bit_length+self.days_bit_length+self.timeslots_per_day_bit_length]       
 
+    def generate_binary_code(self, bit_length, db_length):
+        binary_value = 100000
+        binary_code = np.zeros(bit_length, dtype=int)
+        while binary_value >= db_length:
+            i = 0
+            binary_code = np.random.choice([0, 1], size=bit_length)
+            binary_value = 0
+            reverse_binary_code = binary_code[::-1]
+            for bit in reverse_binary_code:
+                binary_value += bit*2**i
+                i += 1
+        return binary_code
+    
+    def generate_population(self, population_size):
+        for i in range(population_size):
+            self.population[i] = self.generate_genome(self.genome_size)
+    
+    def generate_genome(self, genome_size):
+        genome = np.zeros((genome_size, self.genome_part_bit_length), dtype=int)
+        self.class_hex_value = -1
+        for i in range(genome_size):
+            genome[i] = self.generate_genome_part()
+        return genome
+    
+    def generate_genome_part(self):
+        self.class_hex_value += 1
+        binary_class = self.get_binary_code(np.zeros(self.classes_bit_length, dtype=int), self.class_hex_value)
+        
+        binary_day = self.generate_binary_code(self.days_bit_length, len(self.days))
+        binary_timeslot = self.generate_binary_code(self.timeslots_per_day_bit_length, len(self.timeslots_per_day))
 
-def get_violation_count_saturday_classes(genome):
-    violations = 0
-    for class_scheduling in genome:
-        if class_scheduling['timeslot_day'] == "Saturday":
-            violations += 1
-    return violations
+        genome_part = np.concatenate((binary_class, binary_day, binary_timeslot))
+        return genome_part
 
-def get_violation_count_consecutive_classes(genome):
-    violations = 0
-    for index_day in range(len(days)):
-        classes_day = [x for x in genome if x['timeslot_day'] == index_day]
+    def translate_genome(self, genome, hex_= False, string_= False, chronological= False):
+        translation_string = []
+        translation_hex = []
+        for class_scheduling in genome:
+            class_index = self.get_hex_value(self.get_class_part(class_scheduling))
+            day_index = self.get_hex_value(self.get_day_part(class_scheduling))
+            timeslot_index = self.get_hex_value(self.get_timeslot_part(class_scheduling))
 
-        if len(classes_day) == 0:
-            continue
-
-        for i in range(len(classes_day) - 1):
-            current_timeslot = classes_day[i]['timeslot']
-            next_timeslot = classes_day[i+1]['timeslot']
+            if class_index >= len(self.dataset_classes_organized) or day_index >= len(self.days) or timeslot_index >= len(self.timeslots_per_day):
+                return False
             
-            current_class = classes_day[i]['class']
-            next_class = classes_day[i+1]['class']
+            if hex_:
+                translation_hex.append({'class_data': class_index, 'timeslot_day': day_index, 'timeslot': timeslot_index})
+                if chronological:
+                    translation_hex = sorted(translation_hex, key=lambda k: (k['timeslot_day'], k['timeslot']))
 
-            current_class_type = classes_day[i]['class_type']
-            next_class_type = classes_day[i+1]['class_type']
+            elif string_:
+                class_translation = self.dataset_classes_organized[class_index]
+                timeslot_day_translation = self.days[day_index]
+                timeslot_translation = self.timeslots_per_day[timeslot_index]
 
-            current_class_group = classes_day[i]['class_group']
-            next_class_group = classes_day[i+1]['class_group']
-
-            current_professor = classes_day[i]['professor']
-            next_professor = classes_day[i+1]['professor']
-
-            if current_timeslot == next_timeslot:
-                if current_class != next_class:
-                    violations += 1
-
-                if current_class_type != next_class_type:
-                    violations += 1
-                else:
-                    if current_class_type == "AP":
-                        violations += 1
-
-                if current_class_group == next_class_group and dataset_courseSchedule_semester.iloc[current_class]['ET'] < 4 and dataset_courseSchedule_semester.iloc[next_class]['ET'] < 4:
-                    violations += 1
-
-                if current_professor != next_professor:
-                    violations += 1
-
-                continue
-
-            if current_timeslot != next_timeslot - 1:
-                violations += 1
+                translation_string.append({'class_data': class_translation, 'timeslot_day': timeslot_day_translation, 'timeslot': timeslot_translation})
+                
+                if chronological:
+                    translation_string = sorted(translation_string, key=lambda k: (self.days.index(k['timeslot_day']), k['timeslot']))
             
-            if current_class != next_class:
-                violations += 1
+        if hex_:
+            return translation_hex
+        if string_:
+            return translation_string
 
-            if current_class_type != next_class_type:
-                violations += 1
-
-            if current_class_group != next_class_group:
-                violations += 1
-
-            if current_professor != next_professor:
-                violations += 1
-
-    return violations
-
-def get_violation_count_professor_availability(genome):
-    violations = 0
-    for class_scheduling in genome:
-        professor = class_scheduling['professor']
-        timeslot_day = class_scheduling['timeslot_day']
-        timeslot = class_scheduling['timeslot']
-        check_string = timeslot_day + "-" + timeslot
-        if check_string not in professor_availability[professor]:
-            violations += 1
-
-    return violations
+    def translate_hex_to_binary(self,hex_genome):
+        # write a function that converts the hex genome to a binary genome
+        translation = np.zeros((len(hex_genome), self.genome_part_bit_length), dtype=int)
+        index = 0
+        for class_scheduling in hex_genome:
+            class_hex_value = class_scheduling['class_data']
+            day_hex_value = class_scheduling['timeslot_day']
+            timeslot_hex_value = class_scheduling['timeslot']
             
+            class_binary_code = np.zeros(self.classes_bit_length, dtype=int)
+            day_binary_code = np.zeros(self.days_bit_length, dtype=int)
+            timeslot_binary_code = np.zeros(self.timeslots_per_day_bit_length, dtype=int)
 
-def calculate_fitness_score(genome):
-    translated_genome = translate_genome(genome, string_=True, chronological=True)
-    hex_genome = translate_genome(genome, hex_=True, chronological=True)
-    total_violations = 0
-    # violations_assingning_professor = get_violation_count_assigning_professor(translated_genome)
-    # violations_class_scheduling_count = get_violation_count_class_scheduling(translated_genome)
-    violations_saturday_classes = get_violation_count_saturday_classes(translated_genome)
-    # violations_consecutive_classes = get_violation_count_consecutive_classes(hex_genome)
-    # violations_availability_professor = get_violation_count_professor_availability(translated_genome)
+            class_binary_value = self.get_binary_code(class_binary_code, class_hex_value)
+            day_binary_value = self.get_binary_code(day_binary_code, day_hex_value)
+            timeslot_binary_value = self.get_binary_code(timeslot_binary_code, timeslot_hex_value)
 
-    # print("Violations assingning professor: ", violations_assingning_professor)
-    # print("Violation class scheduling count: ", violations_class_scheduling_count)
-    # print("Violation saturday classes: ", violations_saturday_classes)
-    # print("Violation consecutive classes: ", violations_consecutive_classes)
-    # print("Violation professor availability: ", violations_availability_professor)
-    # total_violations += violations_assingning_professor
-    # total_violations += violations_class_scheduling_count
-    total_violations += violations_saturday_classes
-    # total_violations += violations_consecutive_classes
-    # total_violations += violations_availability_professor
-    return 1/(1+total_violations)
+            # put the binary values in a single numpy array
+            class_schedule_binary = np.concatenate((class_binary_value, day_binary_value, timeslot_binary_value))
+            translation[index] = class_schedule_binary
+            index += 1
 
-def select_parents(population, fitness):
-    return choices(
-        population=population,
-        weights=[fitness(genome) for genome in population],
-        k=2
-    )
+        return translation
 
-def crossover(parent_a, parent_b):
-    offspring_a = []
-    offspring_b = []
-    translation_parent_a = translate_genome(parent_a, string_=True, chronological=False)
-    translation_parent_b = translate_genome(parent_b, string_=True, chronological=False)
+    def get_violation_count_saturday_classes(self, genome):
+        self.incorrectly_assigned_saturday_classes = []
+        violations = 0
+        for class_scheduling in genome:
+            if class_scheduling['timeslot_day'] == 5:
+                violations += 1
+                self.incorrectly_assigned_saturday_classes.append(class_scheduling)
+        return violations
+    
+    def get_available_timeslots(self, genome):
+        available_timeslots = {}
+        for day_index in range(len(self.days) - 1):
+            available_timeslots[day_index] = []
+            for timeslot_index in range(len(self.timeslots_per_day)):
+                classes_on_timeslots = [class_ for class_ in genome if class_['timeslot_day'] == day_index and class_['timeslot'] == timeslot_index]
+                if classes_on_timeslots == []:
+                    available_timeslots[day_index].append(timeslot_index)
 
-    for index_class_scheduling in range(len(parent_a)):
-        offspring_schedule_a = []
-        offspring_schedule_b = []
-        genome_parts = [get_class_part,get_class_type_part,get_class_group_part,get_professor_part,get_timeslot_day_part,get_timeslot_part]
-        split_index = random.randint(0, len(genome_parts) - 2)
-        # print("Before crossover:")
-        # print("ParentPart A:")
-        # print(translation_parent_a[index_class_scheduling])
-        # print("ParentPart B:")
-        # print(translation_parent_b[index_class_scheduling])
-        # print("Split index: ", split_index)
+        # delete the keys that have an empty value
+        available_timeslots = {key: value for key, value in available_timeslots.items() if value != []}
 
-        for i in range(split_index + 1):
-            offspring_schedule_a.append(genome_parts[i](parent_a[index_class_scheduling]))
-            offspring_schedule_b.append(genome_parts[i](parent_b[index_class_scheduling]))
+        return available_timeslots
+    
+    def schedule_class_on_timeslot(self, genome, available_timeslots, index_genome):
+        class_types = self.dataset_classes_organized[genome[index_genome]['class_data']]['class_types']
+        if 'AV' in class_types:
+                timeslot_day = np.random.choice(available_timeslots.keys())
+                timeslot
+                timeslot = np.random.choice(available_timeslots[timeslot_day])
+        else:
+            timeslot_day = np.random.choice(list(available_timeslots.keys()))
+            local_available_timeslots = available_timeslots[timeslot_day][1::]
+            if local_available_timeslots == []:
+                return genome[index_genome]['timeslot_day'], genome[index_genome]['timeslot']
+            timeslot = np.random.choice(list(available_timeslots[timeslot_day][1::]))
 
-        for i in range(split_index + 1, len(genome_parts)):
-            offspring_schedule_a.append(genome_parts[i](parent_b[index_class_scheduling]))
-            offspring_schedule_b.append(genome_parts[i](parent_a[index_class_scheduling]))
+        return timeslot_day, timeslot
+    
+    def get_violation_count_conflicting_classes(self, genome):
+        self.incorrectly_assigned_conflicting_classes = []
+        # check if there are no classes scheduled on the same day with the same timeslot
+        violations = 0
+        for day in range(len(self.days)):
+            for timeslot in range(len(self.timeslots_per_day)):
+                classes = [class_ for class_ in genome if class_['timeslot_day'] == day and class_['timeslot'] == timeslot]
+                classes_translated = [self.dataset_classes_organized[class_['class_data']] for class_ in classes]
+                if len(classes) > 1:
+                    for i in range(len(classes)-1):
+                        class_name_1 = classes_translated[i]['class']
+                        class_name_2 = classes_translated[i+1]['class']
+                        etapa_1 = self.dataset_classes_semester[self.dataset_classes_semester['DISCIPLINA'] == class_name_1]['ET'].max()
+                        etapa_2 = self.dataset_classes_semester[self.dataset_classes_semester['DISCIPLINA'] == class_name_2]['ET'].max()
+                        class_group_1 = classes_translated[i]['class_groups']
+                        class_group_2 = classes_translated[i+1]['class_groups']
+                        common_class_groups = [class_group for class_group in class_group_1 if class_group in class_group_2]
 
-        offspring_schedule_a = [item for sublist in offspring_schedule_a for item in sublist]
-        offspring_schedule_b = [item for sublist in offspring_schedule_b for item in sublist]
+                        if (etapa_1 == etapa_2 and
+                            common_class_groups != []):
+                            violations += 1
+                            self.incorrectly_assigned_conflicting_classes.append(classes[i])
+                
+        return violations
+        
+    def get_violation_count_assigning_classes(self, genome):
+        self.incorrectly_assigned_classes_to_be_replaced = []
+        self.incorrectly_assigned_classes_to_be_scheduled = []
 
-        offspring_a.append(offspring_schedule_a)
-        offspring_b.append(offspring_schedule_b)
+        binary_genome = self.translate_hex_to_binary(genome)
+        translated_genome = self.translate_genome(binary_genome, string_=True)
+        copy_organized_classes = self.dataset_classes_organized.copy()
+        violations = 0
 
-        # print("After crossover:")
-        # print("OffspringPart A:")
-        # print(translate_genome([offspring_schedule_a], string_=True, chronological=False))
-        # print("OffspringPart B:")
-        # print(translate_genome([offspring_schedule_b], string_=True, chronological=False))
-        # print("")   
-    return offspring_a, offspring_b
-            
-def validate_genome(genome):
-    translation = translate_genome(genome, string_=True)
-    if translation == False:
-        return False
-    return True
-
-def mutate(genome):
-    p = 0.993
-    mutations = 0
-    for index_class_scheduling in range(len(genome)):
-        for index_bit in range(len(genome[index_class_scheduling])):
-            valid_mutation = False
-            if random.random() >= p:
-                mutations += 1
-                # print("Before mutation: ", translate_genome(genome, string_=True)[index_class_scheduling])
-                genome[index_class_scheduling][index_bit] = 1 - genome[index_class_scheduling][index_bit]
-                valid_mutation = validate_genome(genome)
-                if valid_mutation == False:
-                    genome[index_class_scheduling][index_bit] = 1 - genome[index_class_scheduling][index_bit]
-                    # print("Invalid mutation")
-                else:
-                    # print("After mutation: ", translate_genome(genome, string_=True)[index_class_scheduling])
-                    pass
-    return genome
-
-def guided_mutation(individual, mutation_rate):
-    # Choose a random subset of genes to mutate based on mutation rate
-    mutated_indices = [(i, j) for i in range(len(individual)) for j in range(len(individual[i])) if random.random() < mutation_rate]
-    # Generate new values for the mutated genes
-    for i, j in mutated_indices:
-        individual[i][j] = 1 - individual[i][j]  # flip the bit value
-        valid_mutation = validate_genome(individual)
-        if valid_mutation == False:
-            individual[i][j] = 1 - individual[i][j]
-    return individual
-
-def mutate_alternative(genome):
-    # print("Mutation of genome")
-    nr_mutations = randint(1, int(0.1*len(genome)))
-    print("Number of mutations: ", nr_mutations)
-    for i in range(nr_mutations):
-        valid_mutation = False
-        while valid_mutation == False:
-            class_scheduling_index = randint(0, len(genome) - 1)
-            random_bit_index = randint(0,len(genome[class_scheduling_index]) - 1)
-            print("Before mutation: ", translate_genome(genome, string_=True)[class_scheduling_index])
-            genome[class_scheduling_index][random_bit_index] = 1 - genome[class_scheduling_index][random_bit_index]
-            valid_mutation = validate_genome(genome)
-            if valid_mutation == False:
-                print("Invalid mutation")
-                genome[class_scheduling_index][random_bit_index] = 1 - genome[class_scheduling_index][random_bit_index]
+        for class_scheduling in translated_genome:
+            if class_scheduling['class_data'] in copy_organized_classes:
+                copy_organized_classes.remove(class_scheduling['class_data'])
             else:
-                print("After mutation: ", translate_genome(genome, string_=True)[class_scheduling_index])
-                # pass
+                violations += 2
+                self.incorrectly_assigned_classes_to_be_replaced.append(class_scheduling)
 
-    return genome
+        # get the classes that are in the organized classes but not in the genome
+        for class_ in copy_organized_classes:
+            violations += 1
+            self.incorrectly_assigned_classes_to_be_scheduled.append(class_)
 
-def run_genetic_algorithm(generation_limit, fitness_limit,mutation_rate, population_size):
-    population = generate_population(population_size=population_size)
+        return violations
     
-    # genome = population[0]
-    # translation = translate_genome(genome, string_=True)
-    # print_per_line(translation)
-    # fitness = calculate_fitness_score(genome)
-    # print("Fitness: ", fitness)
-
-    for i in range(generation_limit):
-        population = sorted(population, key=lambda genome: calculate_fitness_score(genome), reverse=True)
-        print("Generation: ", i)
-        if calculate_fitness_score(population[0]) >= fitness_limit:
-            break
-        print("Best fitness score: ", calculate_fitness_score(population[0]))
-
-        # elitism
-        elitism_count = 2
-        next_generation = population[0:elitism_count] 
-
-        # we pick 2 parent and generate 2 children so we loop for half the length of the generation to get as many
-        # solutions in our next generation as before, we apply -1 because we saved our top 2 genomes
-
-        for j in range(int(len(population)/2) - int(elitism_count/2)):
-            parents = select_parents(population, calculate_fitness_score)
-            offspring_a, offspring_b = crossover(parents[0], parents[1])
-            # offspring_a = mutate(offspring_a) 
-            # offspring_b = mutate(offspring_b)  
-            offspring_a = guided_mutation(offspring_a, mutation_rate)
-            offspring_b = guided_mutation(offspring_b, mutation_rate)
-            # break
-            # print("Offspring a after mutation: ")
-            # print_per_line(translate_genome(offspring_a, string_=True))
-            # print("Offspring b after mutation: ")
-            # print_per_line(translate_genome(offspring_b, string_=True))
-            next_generation += [offspring_a, offspring_b]
-        # break
-        population = next_generation
+    def get_violation_count_timeslot_virtual_classes(self, genome):
+        self.incorrectly_assigned_virtual_classes = []
+        violations = 0
+        for class_scheduling in genome:
+            class_type = self.dataset_classes_organized[class_scheduling['class_data']]['class_types']
+            if class_scheduling['timeslot'] == 0 and class_type != ['AV']:
+                violations += 1
+                self.incorrectly_assigned_virtual_classes.append(class_scheduling)
+        return violations
     
-    population = sorted(population, key=lambda genome: calculate_fitness_score(genome), reverse=True)
+    def validate_genome(self, genome):
+        translation = self.translate_genome(genome, string_=True)
+        if translation == False:
+            return False
+        return True
+    
+    def mutate(self,genome,mutation_rate):
+        # calculate the fitness score of the genome
+        fitness_score = self.calculate_fitness_score(genome)
+        for i in range(genome.shape[0]):
+            for j in range(genome.shape[1]):
+                if np.random.rand() < mutation_rate:
+                    genome[i][j] = 1 - genome[i][j]
+                    valid_mutation = self.validate_genome(genome)
+                    if not valid_mutation:
+                        genome[i][j] = 1 - genome[i][j]
+                    else:
+                        fitness_score_mutated = self.calculate_fitness_score(genome)
+                        if fitness_score_mutated < fitness_score:
+                            genome[i][j] = 1 - genome[i][j]
+        return genome
 
-    return population, i
+    def select_parents(self, population, fitness_function):
+        # Only choose out of the top half ranked on fitness values
+        fitness_values = np.array([fitness_function(genome) for genome in population[:int(self.population_size/2)]])
+
+        # select two parents using the fitness values as weights
+        parents_indices = np.random.choice(int(self.population_size/2), size=2, replace=True, p=fitness_values/fitness_values.sum())
+
+        # return the selected parents
+        return population[parents_indices[0]], population[parents_indices[1]]
+    
+    def crossover(self, parent_a, parent_b):
+        offspring_a = np.empty((self.genome_size, self.genome_part_bit_length), dtype=object)
+        offspring_b = np.empty((self.genome_size, self.genome_part_bit_length), dtype=object)
+
+        for index_class_scheduling in range(len(parent_a)):
+            genome_parts = [self.get_class_part,self.get_day_part, self.get_timeslot_part]
+
+            offspring_class_a = np.empty(len(genome_parts), dtype=object)
+            offspring_class_b = np.empty(len(genome_parts), dtype=object)
+            split_index = np.random.randint(0, len(genome_parts) - 2)
+
+            for i in range(split_index + 1):
+                offspring_class_a[i] = genome_parts[i](parent_a[index_class_scheduling])
+                offspring_class_b[i] = genome_parts[i](parent_b[index_class_scheduling])
+
+            for i in range(split_index + 1, len(genome_parts)):
+                offspring_class_a[i] = genome_parts[i](parent_b[index_class_scheduling])
+                offspring_class_b[i] = genome_parts[i](parent_a[index_class_scheduling])
+
+            offspring_class_a = np.concatenate(offspring_class_a)
+            offspring_class_b = np.concatenate(offspring_class_b)
+
+            offspring_a[index_class_scheduling] = offspring_class_a
+            offspring_b[index_class_scheduling] = offspring_class_b
+
+        return offspring_a, offspring_b
+    
+    def calculate_fitness_score(self, genome):
+        hex_genome = self.translate_genome(genome, hex_=True, chronological=True)
+        violations = 0
+
+        violations += self.get_violation_count_saturday_classes(hex_genome)
+        # violations += self.get_violation_count_assigning_professor(hex_genome)
+        # violations += self.get_violation_count_consecutive_classes(hex_genome)
+        violations += self.get_violation_count_conflicting_classes(hex_genome)
+        violations += self.get_violation_count_assigning_classes(hex_genome)
+        # violations += self.get_violation_count_professor_conflict(hex_genome)
+        violations += self.get_violation_count_timeslot_virtual_classes(hex_genome)
+
+        return 1/(1+violations)
+    
+    def run_genetic_algorithm(self):
+        self.generate_population(self.population_size)
+        # best_fitness_scores = np.zeros(self.generation_limit)
+        
+        for i in range(self.generation_limit):
+            # sort the population based on the fitness score of each genome, make us of the numpy arrays
+            self.population = self.population[np.argsort([self.calculate_fitness_score(genome) for genome in self.population])][::-1]
+            print("Generation: ", i+1)
+            if self.calculate_fitness_score(self.population[0]) >= self.fitness_limit:
+                break
+
+            self.best_fitness_score = self.calculate_fitness_score(self.population[0])
+           
+            print("Best fitness score: ", self.best_fitness_score)
+            
+            next_generation = np.empty((self.population_size, self.genome_size, self.genome_part_bit_length), dtype=object)
+
+            index_generation = 0
+
+            # elitism
+            next_generation[index_generation] = self.population[0]
+            index_generation += 1
+            next_generation[index_generation] = self.population[1]
+            index_generation += 1
+
+            # we pick 2 parent and generate 2 children so we loop for half the length of the generation to get as many
+            # solutions in our next generation as before, we apply -1 because we saved our top 2 genomes
+
+            for j in range(int(len(self.population)/2)-1):
+                parents = self.select_parents(self.population, self.calculate_fitness_score)
+                offspring_a, offspring_b = self.crossover(parents[0], parents[1])
+                
+                mutated_offspring_a = self.mutate(offspring_a, self.mutation_rate)
+                mutated_offspring_b = self.mutate(offspring_b, self.mutation_rate)
+
+                next_generation[index_generation] = mutated_offspring_a
+                index_generation += 1
+                next_generation[index_generation] = mutated_offspring_b
+                index_generation += 1
+            
+            self.population = next_generation
+
+        self.population = self.population[np.argsort([self.calculate_fitness_score(genome) for genome in self.population])][::-1]
+
+        return self.population[0], i+1,
+
+
+# User inputs
+input_dataset_classes = pd.read_csv('../data/ClassesNoDuplicates.csv', sep=';')
+input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
+input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
+
+input_semester = "even"
+# input_semester = "odd"
+
+input_timeslots_per_day = [
+    "12:45-14:25",
+    "17:10-18:50",
+    "19:00-20:40",
+    "20:55-22:35"]
+
+days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday']
+input_class_groups = ["A", "B"]
+
+input_generation_limit = 5000
+input_fitness_limit = 1
+input_mutation_rate = 0.03
+input_population_size = 14
+# input_early_stopping = 5000
+
+input_professor_availability = {}
+for professor in input_dataset_competence_teachers['PROFESSOR CODE'].unique():
+    input_professor_availability[professor] = {}
+    for day_index in range(len(days)):
+        input_professor_availability[professor][day_index] = {}
+        for timeslot_index in range(len(input_timeslots_per_day)):
+            input_professor_availability[professor][day_index][timeslot_index] = False
+            if np.random.rand() < 0.4:
+                input_professor_availability[professor][day_index][timeslot_index] = True
 
 start = time.time()
 
-population, generations = run_genetic_algorithm(generation_limit=10, fitness_limit=1,mutation_rate=0.005,population_size=30)
-
+class_schedule = GenerateClassSchedule(dataset_classes=input_dataset_classes, dataset_competence_teachers=input_dataset_competence_teachers,
+                                       dataset_professor_availability=input_professor_availability ,semester=input_semester, timeslots_per_day=input_timeslots_per_day,
+                                       class_groups = input_class_groups, generation_limit=input_generation_limit, fitness_limit=input_fitness_limit,
+                                       mutation_rate=input_mutation_rate,population_size=input_population_size, early_stopping=None)
 end = time.time()
 
-print(f"Number of generations: {generations}")
-print(f"Time: {end - start}")
-print(f"Best solution: ")
-print_per_line(translate_genome(population[0], string_=True, chronological=True))
+print("Generations: ", class_schedule.generations)
+print("Time: ", end - start)
+print("Best solution: ")
+class_schedule.print_per_line(class_schedule.translation_best_solution)
+print("Fitness score: ", class_schedule.fitness_score)
