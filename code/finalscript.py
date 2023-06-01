@@ -33,10 +33,10 @@ class GenerateClassSchedule:
         self.genome_size = len(self.dataset_classes_organized)
     
         self.classes_bit_length = self.get_bit_length(len(self.dataset_classes_organized))
-        self.professors_bit_length = self.get_bit_length(len(self.professors))
+        # self.professors_bit_length = self.get_bit_length(len(self.professors))
         self.days_bit_length = self.get_bit_length(len(self.days))
         self.timeslots_per_day_bit_length = self.get_bit_length(len(self.timeslots_per_day))
-        self.genome_part_bit_length = self.classes_bit_length + self.professors_bit_length + self.days_bit_length + self.timeslots_per_day_bit_length
+        self.genome_part_bit_length = self.classes_bit_length + self.days_bit_length + self.timeslots_per_day_bit_length
         self.class_hex_value = -1
         self.best_fitness_score = 0
 
@@ -47,12 +47,12 @@ class GenerateClassSchedule:
         self.translation_best_solution = self.translate_genome(self.best_solution, string_=True, chronological=True)
         self.best_solution_hex = self.translate_genome(self.best_solution, hex_=True, chronological=True)
 
-        self.violation_count_assigning_professor = self.get_violation_count_assigning_professor(self.best_solution_hex)
+        # self.violation_count_assigning_professor = self.get_violation_count_assigning_professor(self.best_solution_hex)
         self.violation_count_saturday_classes = self.get_violation_count_saturday_classes(self.best_solution_hex)
         self.violation_count_consecutive_classes = self.get_violation_count_consecutive_classes(self.best_solution_hex)
         self.violation_count_conflicting_classes = self.get_violation_count_conflicting_classes(self.best_solution_hex)
         self.violation_count_assigning_classes = self.get_violation_count_assigning_classes(self.best_solution_hex)
-        self.violation_count_professor_conflict = self.get_violation_count_professor_conflict(self.best_solution_hex)
+        # self.violation_count_professor_conflict = self.get_violation_count_professor_conflict(self.best_solution_hex)
         self.violation_count_timeslot_virtual_classes = self.get_violation_count_timeslot_virtual_classes(self.best_solution_hex)
 
     def print_per_line(self, genome):
@@ -148,14 +148,14 @@ class GenerateClassSchedule:
     def get_class_part(self, class_scheduling):
         return class_scheduling[:self.classes_bit_length]
     
-    def get_professor_part(self, class_scheduling):
-        return class_scheduling[self.classes_bit_length:self.classes_bit_length+self.professors_bit_length]
+    # def get_professor_part(self, class_scheduling):
+    #     return class_scheduling[self.classes_bit_length:self.classes_bit_length+self.professors_bit_length]
     
     def get_day_part(self, class_scheduling):
-        return class_scheduling[self.classes_bit_length+self.professors_bit_length:self.classes_bit_length+self.professors_bit_length+self.days_bit_length]
+        return class_scheduling[self.classes_bit_length:self.classes_bit_length+self.days_bit_length]
     
     def get_timeslot_part(self, class_scheduling):
-        return class_scheduling[self.classes_bit_length+self.professors_bit_length+self.days_bit_length:self.classes_bit_length+self.professors_bit_length+self.days_bit_length+self.timeslots_per_day_bit_length]       
+        return class_scheduling[self.classes_bit_length+self.days_bit_length:self.classes_bit_length+self.days_bit_length+self.timeslots_per_day_bit_length]       
 
     def generate_binary_code(self, bit_length, db_length):
         binary_value = 100000
@@ -185,11 +185,11 @@ class GenerateClassSchedule:
         self.class_hex_value += 1
         binary_class = self.get_binary_code(np.zeros(self.classes_bit_length, dtype=int), self.class_hex_value)
         
-        binary_professor = self.generate_binary_code(self.professors_bit_length, len(self.professors))
+        # binary_professor = self.generate_binary_code(self.professors_bit_length, len(self.professors))
         binary_day = self.generate_binary_code(self.days_bit_length, len(self.days))
         binary_timeslot = self.generate_binary_code(self.timeslots_per_day_bit_length, len(self.timeslots_per_day))
 
-        genome_part = np.concatenate((binary_class, binary_professor, binary_day, binary_timeslot))
+        genome_part = np.concatenate((binary_class, binary_day, binary_timeslot))
         return genome_part
 
     def translate_genome(self, genome, hex_= False, string_= False, chronological= False):
@@ -197,25 +197,25 @@ class GenerateClassSchedule:
         translation_hex = []
         for class_scheduling in genome:
             class_index = self.get_hex_value(self.get_class_part(class_scheduling))
-            professor_index = self.get_hex_value(self.get_professor_part(class_scheduling))
+            # professor_index = self.get_hex_value(self.get_professor_part(class_scheduling))
             day_index = self.get_hex_value(self.get_day_part(class_scheduling))
             timeslot_index = self.get_hex_value(self.get_timeslot_part(class_scheduling))
 
-            if class_index >= len(self.dataset_classes_organized) or professor_index >= len(self.professors) or day_index >= len(self.days) or timeslot_index >= len(self.timeslots_per_day):
+            if class_index >= len(self.dataset_classes_organized) or day_index >= len(self.days) or timeslot_index >= len(self.timeslots_per_day):
                 return False
             
             if hex_:
-                translation_hex.append({'class_data': class_index, 'professor': professor_index, 'timeslot_day': day_index, 'timeslot': timeslot_index})
+                translation_hex.append({'class_data': class_index, 'timeslot_day': day_index, 'timeslot': timeslot_index})
                 if chronological:
                     translation_hex = sorted(translation_hex, key=lambda k: (k['timeslot_day'], k['timeslot']))
 
             elif string_:
                 class_translation = self.dataset_classes_organized[class_index]
-                professor_translation = self.professors[professor_index]
+                # professor_translation = self.professors[professor_index]
                 timeslot_day_translation = self.days[day_index]
                 timeslot_translation = self.timeslots_per_day[timeslot_index]
 
-                translation_string.append({'class_data': class_translation, 'professor': professor_translation, 'timeslot_day': timeslot_day_translation, 'timeslot': timeslot_translation})
+                translation_string.append({'class_data': class_translation, 'timeslot_day': timeslot_day_translation, 'timeslot': timeslot_translation})
                 
                 if chronological:
                     translation_string = sorted(translation_string, key=lambda k: (self.days.index(k['timeslot_day']), k['timeslot']))
@@ -231,77 +231,80 @@ class GenerateClassSchedule:
         index = 0
         for class_scheduling in hex_genome:
             class_hex_value = class_scheduling['class_data']
-            professor_hex_value = class_scheduling['professor']
+            # professor_hex_value = class_scheduling['professor']
             day_hex_value = class_scheduling['timeslot_day']
             timeslot_hex_value = class_scheduling['timeslot']
             
             class_binary_code = np.zeros(self.classes_bit_length, dtype=int)
-            professor_binary_code = np.zeros(self.professors_bit_length, dtype=int)
+            # professor_binary_code = np.zeros(self.professors_bit_length, dtype=int)
             day_binary_code = np.zeros(self.days_bit_length, dtype=int)
             timeslot_binary_code = np.zeros(self.timeslots_per_day_bit_length, dtype=int)
 
             class_binary_value = self.get_binary_code(class_binary_code, class_hex_value)
-            professor_binary_value = self.get_binary_code(professor_binary_code, professor_hex_value)
+            # professor_binary_value = self.get_binary_code(professor_binary_code, professor_hex_value)
             day_binary_value = self.get_binary_code(day_binary_code, day_hex_value)
             timeslot_binary_value = self.get_binary_code(timeslot_binary_code, timeslot_hex_value)
 
             # put the binary values in a single numpy array
-            class_schedule_binary = np.concatenate((class_binary_value, professor_binary_value, day_binary_value, timeslot_binary_value))
+            class_schedule_binary = np.concatenate((class_binary_value, day_binary_value, timeslot_binary_value))
             translation[index] = class_schedule_binary
             index += 1
 
         return translation
 
-    def get_violation_count_assigning_professor(self, genome):
-        self.incorrectly_assigned_professors = []
-        violations = 0
-        for class_scheduling in genome:
-            professor = self.professors[class_scheduling['professor']]
-            if professor == 45.0:
-                continue
-            class_name = self.dataset_classes_organized[class_scheduling['class_data']]['class']
-            is_available = self.check_if_available(professor, self.dataset_professor_availability, class_scheduling['timeslot_day'], 
-                                                   class_scheduling['timeslot'], genome)
-            if class_name not in self.dict_competence_teachers[professor] or not is_available:
-                violations += 1
-                self.incorrectly_assigned_professors.append(class_scheduling)
+    # def get_violation_count_assigning_professor(self, genome):
+    #     self.incorrectly_assigned_professors = []
+    #     violations = 0
+    #     for class_scheduling in genome:
+    #         professor = self.professors[class_scheduling['professor']]
+    #         if professor == 45.0:
+    #             continue
+    #         class_name = self.dataset_classes_organized[class_scheduling['class_data']]['class']
+    #         is_available = self.check_if_available(professor, self.dataset_professor_availability, class_scheduling['timeslot_day'], 
+    #                                                class_scheduling['timeslot'], genome)
+    #         if class_name not in self.dict_competence_teachers[professor] or not is_available:
+    #             violations += 1
+    #             self.incorrectly_assigned_professors.append(class_scheduling)
 
-        return violations
+    #     return violations
     
-    def enhance_assigning_professor(self, genome):
-        for incorrectly_assigned_professor in self.incorrectly_assigned_professors:
-            class_name = self.dataset_classes_organized[incorrectly_assigned_professor['class_data']]['class']
-            competent_professors = [professor for professor in self.dict_competence_teachers if class_name in self.dict_competence_teachers[professor]]
-            available_professors = [professor for professor in self.professors if self.check_if_available(professor, self.dataset_professor_availability,incorrectly_assigned_professor['timeslot_day'], incorrectly_assigned_professor['timeslot'], genome)]
-            possible_professors = [professor for professor in competent_professors if professor in available_professors]
-            if possible_professors != []:
-                professor = np.random.choice(possible_professors)
-                index_genome = genome.index(incorrectly_assigned_professor)
-                genome[index_genome]['professor'] = self.professors.tolist().index(professor)
-            else:
-                print("No possible professors found for class: ", class_name)
+    # def enhance_assigning_professor(self, genome):
+    #     for incorrectly_assigned_professor in self.incorrectly_assigned_professors:
+    #         class_name = self.dataset_classes_organized[incorrectly_assigned_professor['class_data']]['class']
+    #         competent_professors = [professor for professor in self.dict_competence_teachers if class_name in self.dict_competence_teachers[professor]]
+    #         available_professors = [professor for professor in self.professors if self.check_if_available(professor, self.dataset_professor_availability,incorrectly_assigned_professor['timeslot_day'], incorrectly_assigned_professor['timeslot'], genome)]
+    #         possible_professors = [professor for professor in competent_professors if professor in available_professors]
+    #         if possible_professors != []:
+    #             professor = np.random.choice(possible_professors)
+    #             index_genome = genome.index(incorrectly_assigned_professor)
+    #             genome[index_genome]['professor'] = self.professors.tolist().index(professor)
+    #         else:
+    #             print("No possible professors found for class: ", class_name)
 
-        for conflicting_professor in self.incorrectly_assigned_professor_conflict:
-            class_name = self.dataset_classes_organized[conflicting_professor['class_data']]['class']
-            competent_professors = [professor for professor in self.dict_competence_teachers if class_name in self.dict_competence_teachers[professor]]
-            available_professors = [professor for professor in self.professors if self.check_if_available(professor, self.dataset_professor_availability,conflicting_professor['timeslot_day'], conflicting_professor['timeslot'], genome)]
-            possible_professors = [professor for professor in competent_professors if professor in available_professors]
-            if possible_professors != []:
-                professor = np.random.choice(possible_professors)
-                index_genome = genome.index(conflicting_professor)
-                genome[index_genome]['professor'] = self.professors.tolist().index(professor)
-            else:
-                print("No possible professors found for class: ", class_name)
-        return genome
+    #     for conflicting_professor in self.incorrectly_assigned_professor_conflict:
+    #         class_name = self.dataset_classes_organized[conflicting_professor['class_data']]['class']
+    #         competent_professors = [professor for professor in self.dict_competence_teachers if class_name in self.dict_competence_teachers[professor]]
+    #         available_professors = [professor for professor in self.professors if self.check_if_available(professor, self.dataset_professor_availability,conflicting_professor['timeslot_day'], conflicting_professor['timeslot'], genome)]
+    #         possible_professors = [professor for professor in competent_professors if professor in available_professors]
+    #         if possible_professors != []:
+    #             professor = np.random.choice(possible_professors)
+    #             index_genome = genome.index(conflicting_professor)
+    #             genome[index_genome]['professor'] = self.professors.tolist().index(professor)
+    #         else:
+    #             print("No possible professors found for class: ", class_name)
+    #     # update the violation count
+    #     binary_genome = self.translate_hex_to_binary(genome)
+    #     self.fitness_score = self.calculate_fitness_score(binary_genome)
+    #     return genome
     
-    def update_professor_availability(self, genome):
-        for class_scheduling in genome:
-            professor = self.professors[class_scheduling['professor']]
-            self.dataset_professor_availability[professor][class_scheduling['timeslot_day']][class_scheduling['timeslot']] = False
+    # def update_professor_availability(self, genome):
+    #     for class_scheduling in genome:
+    #         professor = self.professors[class_scheduling['professor']]
+    #         self.dataset_professor_availability[professor][class_scheduling['timeslot_day']][class_scheduling['timeslot']] = False
     
-    def check_if_available(self, professor, dataset_professor_availability, timeslot_day, timeslot, genome):
-        self.update_professor_availability(genome)
-        return dataset_professor_availability[professor][timeslot_day][timeslot]
+    # def check_if_available(self, professor, dataset_professor_availability, timeslot_day, timeslot, genome):
+    #     self.update_professor_availability(genome)
+    #     return dataset_professor_availability[professor][timeslot_day][timeslot]
 
     def get_violation_count_saturday_classes(self, genome):
         self.incorrectly_assigned_saturday_classes = []
@@ -310,7 +313,7 @@ class GenerateClassSchedule:
             if class_scheduling['timeslot_day'] == 5:
                 violations += 1
                 self.incorrectly_assigned_saturday_classes.append(class_scheduling)
-        return violations * 0.2
+        return violations
     
     def get_available_timeslots(self, genome):
         available_timeslots = {}
@@ -321,21 +324,40 @@ class GenerateClassSchedule:
                 if classes_on_timeslots == []:
                     available_timeslots[day_index].append(timeslot_index)
 
+        # delete the keys that have an empty value
+        available_timeslots = {key: value for key, value in available_timeslots.items() if value != []}
+
         return available_timeslots
+    
+    def schedule_class_on_timeslot(self, genome, available_timeslots, index_genome):
+        class_types = self.dataset_classes_organized[genome[index_genome]['class_data']]['class_types']
+        if 'AV' in class_types:
+                timeslot_day = np.random.choice(available_timeslots.keys())
+                timeslot
+                timeslot = np.random.choice(available_timeslots[timeslot_day])
+        else:
+            timeslot_day = np.random.choice(list(available_timeslots.keys()))
+            local_available_timeslots = available_timeslots[timeslot_day][1::]
+            if local_available_timeslots == []:
+                return genome[index_genome]['timeslot_day'], genome[index_genome]['timeslot']
+            timeslot = np.random.choice(list(available_timeslots[timeslot_day][1::]))
+
+        return timeslot_day, timeslot
     
     def enhance_assigning_saturday_classes(self, genome):
         for incorrectly_assigned_saturday_class in self.incorrectly_assigned_saturday_classes:
-            index_genome = genome.tolist().index(incorrectly_assigned_saturday_class)
+            index_genome = genome.index(incorrectly_assigned_saturday_class)
             available_timeslots = self.get_available_timeslots(genome)
             if available_timeslots == {}:
                 print("No available timeslots found for saturday class: ", incorrectly_assigned_saturday_class)
             else:
-                # pick a random timeslot from the available timeslots
-                timeslot_day = np.random.choice(available_timeslots.keys())
-                timeslot = np.random.choice(available_timeslots[timeslot_day])
+                timeslot_day,timeslot = self.schedule_class_on_timeslot(genome, available_timeslots, index_genome)
+                
                 genome[index_genome]['timeslot_day'] = timeslot_day
                 genome[index_genome]['timeslot'] = timeslot
-
+        # update the violation count
+        binary_genome = self.translate_hex_to_binary(genome)
+        self.fitness_score = self.calculate_fitness_score(binary_genome)
         return genome
 
     def get_violation_count_consecutive_classes(self, genome):
@@ -357,8 +379,7 @@ class GenerateClassSchedule:
                 # check if these classes are scheduled on the same day and a consecutive timeslot
                 for i in range(len(classes)-1):
                     if (classes[i]['timeslot_day'] == classes[i+1]['timeslot_day'] and 
-                        classes[i]['timeslot'] == classes[i+1]['timeslot'] -1 and
-                        classes[i]['professor'] == classes[i+1]['professor']):
+                        classes[i]['timeslot'] == classes[i+1]['timeslot'] -1):
                         continue
                     else:
                         violations += 1
@@ -366,22 +387,25 @@ class GenerateClassSchedule:
 
         return violations
     
-    def enhance_assigning_consecutive_classes(self, genome):
-        for incorrectly_assigned_consecutive_class in self.incorrectly_assigned_consecutive_classes:
-            available_timeslots = self.get_available_timeslots(genome)
-            class_name = self.dataset_classes_organized[incorrectly_assigned_consecutive_class['class_data']]['class']
-            indexes_classes = [index for index in range(len(self.dataset_classes_organized)) if self.dataset_classes_organized[index]['class'] == class_name]
-            # find two consecutive timeslots in the available timeslots
-            for day_index in available_timeslots.keys():
-                for timeslot_index in range(len(available_timeslots[day_index])-1):
-                    if available_timeslots[day_index][timeslot_index] == available_timeslots[day_index][timeslot_index+1] - 1:
-                        genome[indexes_classes[0]]['timeslot_day'] = day_index
-                        genome[indexes_classes[0]]['timeslot'] = available_timeslots[day_index][timeslot_index]
+    # def enhance_assigning_consecutive_classes(self, genome):
+    #     for incorrectly_assigned_consecutive_class in self.incorrectly_assigned_consecutive_classes:
+    #         available_timeslots = self.get_available_timeslots(genome)
+    #         class_name = self.dataset_classes_organized[incorrectly_assigned_consecutive_class['class_data']]['class']
+    #         indexes_classes = [index for index in range(len(self.dataset_classes_organized)) if self.dataset_classes_organized[index]['class'] == class_name]
+    #         # find two consecutive timeslots in the available timeslots
+    #         for day_index in available_timeslots.keys():
+    #             for timeslot_index in range(len(available_timeslots[day_index])-1):
+    #                 if available_timeslots[day_index][timeslot_index] == available_timeslots[day_index][timeslot_index+1] - 1:
+    #                     genome[indexes_classes[0]]['timeslot_day'] = day_index
+    #                     genome[indexes_classes[0]]['timeslot'] = available_timeslots[day_index][timeslot_index]
 
-                        genome[indexes_classes[1]]['timeslot_day'] = day_index
-                        genome[indexes_classes[1]]['timeslot'] = available_timeslots[day_index][timeslot_index+1]
+    #                     genome[indexes_classes[1]]['timeslot_day'] = day_index
+    #                     genome[indexes_classes[1]]['timeslot'] = available_timeslots[day_index][timeslot_index+1]
 
-        return genome
+    #     # update the violation count
+    #     binary_genome = self.translate_hex_to_binary(genome)
+    #     self.fitness_score = self.calculate_fitness_score(binary_genome)
+    #     return genome
     
     def get_violation_count_conflicting_classes(self, genome):
         self.incorrectly_assigned_conflicting_classes = []
@@ -412,12 +436,12 @@ class GenerateClassSchedule:
         for incorrectly_assigned_conflicting_class in self.incorrectly_assigned_conflicting_classes:
             available_timeslots = self.get_available_timeslots(genome)
             index_genome = genome.tolist().index(incorrectly_assigned_conflicting_class)
-            # pick an available timeslot
-            timeslot_day = np.random.choice(available_timeslots.keys())
-            timeslot = np.random.choice(available_timeslots[timeslot_day])
+            timeslot_day, timeslot = self.schedule_class_on_timeslot(genome, available_timeslots, index_genome)
             genome[index_genome]['timeslot_day'] = timeslot_day
             genome[index_genome]['timeslot'] = timeslot
-
+        # update the violation count
+        binary_genome = self.translate_hex_to_binary(genome)
+        self.fitness_score = self.calculate_fitness_score(binary_genome)
         return genome
         
     def get_violation_count_assigning_classes(self, genome):
@@ -447,35 +471,36 @@ class GenerateClassSchedule:
         for index_incorrectly_assigned_class in range(len(self.incorrectly_assigned_classes_to_be_replaced)):
             class_to_be_replaced = self.incorrectly_assigned_classes_to_be_replaced[index_incorrectly_assigned_class]
             class_to_be_scheduled = self.incorrectly_assigned_classes_to_be_scheduled[index_incorrectly_assigned_class]
-            index_genome_to_be_replaced = genome.tolist().index(class_to_be_replaced)
+            index_genome_to_be_replaced = genome.index(class_to_be_replaced)
             genome[index_genome_to_be_replaced] = class_to_be_scheduled
-
+        # update the violation count
+        binary_genome = self.translate_hex_to_binary(genome)
+        self.fitness_score = self.calculate_fitness_score(binary_genome)
         return genome
 
-    
-    def get_violation_count_professor_conflict(self, genome):
-        self.incorrectly_assigned_professor_conflict = []
-        violations = 0
-        professor_classes = {}
+    # def get_violation_count_professor_conflict(self, genome):
+    #     self.incorrectly_assigned_professor_conflict = []
+    #     violations = 0
+    #     professor_classes = {}
         
-        # Group the classes by professor
-        for class_ in genome:
-            professor = class_['professor']
-            if professor in professor_classes:
-                professor_classes[professor].append(class_)
-            else:
-                professor_classes[professor] = [class_]
+    #     # Group the classes by professor
+    #     for class_ in genome:
+    #         professor = class_['professor']
+    #         if professor in professor_classes:
+    #             professor_classes[professor].append(class_)
+    #         else:
+    #             professor_classes[professor] = [class_]
         
-        # Check for conflicts within each professor's classes
-        for professor, classes in professor_classes.items():
-            classes = sorted(classes, key=lambda x: (x['timeslot_day'], x['timeslot']))
-            for i in range(len(classes)-1):
-                if (classes[i]['timeslot_day'] == classes[i+1]['timeslot_day'] and
-                    classes[i]['timeslot'] == classes[i+1]['timeslot']):
-                    violations += 1
-                    self.incorrectly_assigned_professor_conflict.append(classes[i])
+    #     # Check for conflicts within each professor's classes
+    #     for professor, classes in professor_classes.items():
+    #         classes = sorted(classes, key=lambda x: (x['timeslot_day'], x['timeslot']))
+    #         for i in range(len(classes)-1):
+    #             if (classes[i]['timeslot_day'] == classes[i+1]['timeslot_day'] and
+    #                 classes[i]['timeslot'] == classes[i+1]['timeslot']):
+    #                 violations += 1
+    #                 self.incorrectly_assigned_professor_conflict.append(classes[i])
 
-        return violations
+    #     return violations
     
     def get_violation_count_timeslot_virtual_classes(self, genome):
         self.incorrectly_assigned_virtual_classes = []
@@ -487,20 +512,19 @@ class GenerateClassSchedule:
                 self.incorrectly_assigned_virtual_classes.append(class_scheduling)
         return violations
     
-    def enhance_assigning_virtual_classes(self, genome):
-        for incorrectly_assigned_virtual_class in self.incorrectly_assigned_virtual_classes:
-            index_genome = genome.tolist().index(incorrectly_assigned_virtual_class)
-            available_timeslots = self.get_available_timeslots(genome)
-            if available_timeslots == {}:
-                print("No available timeslots found for virtual class: ", incorrectly_assigned_virtual_class)
-            else:
-                # pick a random timeslot from the available timeslots
-                timeslot_day = np.random.choice(available_timeslots.keys())
-                timeslot = np.random.choice(available_timeslots[timeslot_day][1::])
-                genome[index_genome]['timeslot_day'] = timeslot_day
-                genome[index_genome]['timeslot'] = timeslot
-
-        return genome
+    # def enhance_assigning_virtual_classes(self, genome):
+    #     for incorrectly_assigned_virtual_class in self.incorrectly_assigned_virtual_classes:
+    #         index_genome = genome.tolist().index(incorrectly_assigned_virtual_class)
+    #         available_timeslots = self.get_available_timeslots(genome)
+    #         if available_timeslots == {}:
+    #             print("No available timeslots found for virtual class: ", incorrectly_assigned_virtual_class)
+    #         else:
+    #             timeslot_day, timeslot = self.schedule_class_on_timeslot(genome, available_timeslots, index_genome)
+    #             genome[index_genome]['timeslot_day'] = timeslot_day
+    #             genome[index_genome]['timeslot'] = timeslot
+    #     # update the violation count
+    #     self.fitness_score = self.calculate_fitness_score(genome)
+    #     return genome
 
     def validate_genome(self, genome):
         translation = self.translate_genome(genome, string_=True)
@@ -539,7 +563,7 @@ class GenerateClassSchedule:
         offspring_b = np.empty((self.genome_size, self.genome_part_bit_length), dtype=object)
 
         for index_class_scheduling in range(len(parent_a)):
-            genome_parts = [self.get_class_part,self.get_professor_part, self.get_day_part, self.get_timeslot_part]
+            genome_parts = [self.get_class_part,self.get_day_part, self.get_timeslot_part]
 
             offspring_class_a = np.empty(len(genome_parts), dtype=object)
             offspring_class_b = np.empty(len(genome_parts), dtype=object)
@@ -566,14 +590,35 @@ class GenerateClassSchedule:
         violations = 0
 
         violations += self.get_violation_count_saturday_classes(hex_genome)
-        violations += self.get_violation_count_assigning_professor(hex_genome)
+        # violations += self.get_violation_count_assigning_professor(hex_genome)
         violations += self.get_violation_count_consecutive_classes(hex_genome)
         violations += self.get_violation_count_conflicting_classes(hex_genome)
         violations += self.get_violation_count_assigning_classes(hex_genome)
-        violations += self.get_violation_count_professor_conflict(hex_genome)
+        # violations += self.get_violation_count_professor_conflict(hex_genome)
         violations += self.get_violation_count_timeslot_virtual_classes(hex_genome)
 
         return 1/(1+violations)
+    
+    # def enhance_genome(self,genome):
+    #     # print all of the violation counts before enhancement
+    #     print("Before local search: ")
+    #     # print("Violation count assigning professor: ", self.get_violation_count_assigning_professor(genome))
+    #     print("Violation count assigning saturday classes: ", self.get_violation_count_saturday_classes(genome))
+    #     print("Violation count assigning consecutive classes: ", self.get_violation_count_consecutive_classes(genome))
+    #     print("Violation count assigning conflicting classes: ", self.get_violation_count_conflicting_classes(genome))
+    #     print("Violation count assigning classes: ", self.get_violation_count_assigning_classes(genome))
+    #     # print("Violation count professor conflict: ", self.get_violation_count_professor_conflict(genome))
+    #     print("Violation count assigning virtual classes: ", self.get_violation_count_timeslot_virtual_classes(genome))
+    #     # print("Violation count assigning virtual classes: ", self.get_violation_count_timeslot_virtual_classes(genome))
+
+    #     genome = self.enhance_assigning_classes(genome)
+    #     genome = self.enhance_assigning_saturday_classes(genome)
+    #     # genome = self.enhance_assigning_virtual_classes(genome)
+    #     # genome = self.enhance_assigning_professor(genome)
+    #     # genome = self.enhance_assigning_consecutive_classes(genome)
+    #     genome = self.enhance_assigning_conflicting_classes(genome)
+
+    #     return genome
     
     def run_genetic_algorithm(self):
         self.generate_population(self.population_size)
@@ -595,8 +640,8 @@ class GenerateClassSchedule:
                     print("Stuck")
                     best_genome = self.population[0]
                     hex_best_genome = self.translate_genome(best_genome, hex_=True, chronological=True)
-                    hex_best_genome_enhanced_assigning_professor = self.enhance_assigning_professor(hex_best_genome)
-                    best_genome_binary = self.translate_hex_to_binary(hex_best_genome_enhanced_assigning_professor)
+                    # hex_best_genome = self.enhance_genome(hex_best_genome)
+                    best_genome_binary = self.translate_hex_to_binary(hex_best_genome)
                     
                     return best_genome_binary, i+1
 
@@ -640,6 +685,8 @@ input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
 input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
 
 input_semester = "even"
+input_semester = "odd"
+
 input_timeslots_per_day = [
     "12:45-14:25",
     "17:10-18:50",
@@ -653,7 +700,7 @@ input_generation_limit = 5000
 input_fitness_limit = 1
 input_mutation_rate = 0.03
 input_population_size = 14
-input_early_stopping = 200
+input_early_stopping = 80
 
 input_professor_availability = {}
 for professor in input_dataset_competence_teachers['PROFESSOR CODE'].unique():
@@ -662,7 +709,7 @@ for professor in input_dataset_competence_teachers['PROFESSOR CODE'].unique():
         input_professor_availability[professor][day_index] = {}
         for timeslot_index in range(len(input_timeslots_per_day)):
             input_professor_availability[professor][day_index][timeslot_index] = False
-            if np.random.rand() < 0.5:
+            if np.random.rand() < 0.4:
                 input_professor_availability[professor][day_index][timeslot_index] = True
 
 start = time.time()
@@ -678,11 +725,10 @@ print("Time: ", end - start)
 print("Best solution: ")
 class_schedule.print_per_line(class_schedule.translation_best_solution)
 print("Fitness score: ", class_schedule.fitness_score)
-print("Violation count assigning professor: ", class_schedule.violation_count_assigning_professor)
+# print("Violation count assigning professor: ", class_schedule.violation_count_assigning_professor)
 print("Violation count saturday classes: ", class_schedule.violation_count_saturday_classes)
 print("Violation count consecutive classes: ", class_schedule.violation_count_consecutive_classes)
 print("Violation count conflicting classes: ", class_schedule.violation_count_conflicting_classes)
 print("Violation count assigning classes: ", class_schedule.violation_count_assigning_classes)
-print("Violation count professor conflict: ", class_schedule.violation_count_professor_conflict)
+# print("Violation count professor conflict: ", class_schedule.violation_count_professor_conflict)
 print("Violation count timeslot virtual classes: ", class_schedule.violation_count_timeslot_virtual_classes)
-class_schedule.print_per_line(class_schedule.dataset_classes_organized)

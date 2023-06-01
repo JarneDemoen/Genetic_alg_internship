@@ -1,3 +1,4 @@
 - Implementation of the professor availability
 - Add a constraint where only virtual classes can be scheduled on the first timeslot
 - Test the algorithm on the odd semesters too
+- deleted the consecutive classes rule as it slowed down the algorithm and it was not that important
