@@ -1,4 +1,5 @@
 - Implementation of the professor availability
 - Add a constraint where only virtual classes can be scheduled on the first timeslot
-- Test the algorithm on the odd semesters too
-- deleted the consecutive classes rule as it slowed down the algorithm and it was not that important
+- Deleted the consecutive classes rule as it slowed down the algorithm and it was not that important
+- Created conventional algorithm to assign professors to each class
+- Let the algorithm run a couple of times and show the best one

@@ -1,3 +1,0 @@
-- Implement local search algorithm to find the best solution for the problem, algorithm seems to 
-be stuck at a local optimum (starting from 7 constraints = score of 0.125)
-- Assign professors by myself instead of letting the algorithm decide

@@ -9,7 +9,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 class GenerateClassSchedule:
     def __init__(self, dataset_classes, dataset_competence_teachers, dataset_professor_availability, semester, 
-                 timeslots_per_day, class_groups, generation_limit, fitness_limit, mutation_rate, population_size, early_stopping):
+                 timeslots_per_day, class_groups, generation_limit, fitness_limit, mutation_rate, population_size, iterations):
         self.dataset_classes = dataset_classes
         self.dataset_competence_teachers = dataset_competence_teachers
         self.dict_competence_teachers = self.get_competence_teachers(self.dataset_competence_teachers)
@@ -26,31 +26,74 @@ class GenerateClassSchedule:
         self.class_groups = class_groups
         self.dataset_classes_semester = self.get_classes_semester(self.dataset_classes, self.semester)
         self.timeslots_week = [timeslots_per_day for i in range(len(self.days))]
-        self.early_stopping = early_stopping
+        self.iterations = iterations
         self.dataset_classes_organized = self.organize_classes(self.dataset_classes_semester)
 
-        self.classes_assigned = []
         self.genome_size = len(self.dataset_classes_organized)
     
         self.classes_bit_length = self.get_bit_length(len(self.dataset_classes_organized))
         self.days_bit_length = self.get_bit_length(len(self.days))
         self.timeslots_per_day_bit_length = self.get_bit_length(len(self.timeslots_per_day))
         self.genome_part_bit_length = self.classes_bit_length + self.days_bit_length + self.timeslots_per_day_bit_length
-        self.class_hex_value = -1
-        self.best_fitness_score = 0
+        self.genomes = []
+        self.violations = []
 
-        self.population = np.zeros((self.population_size, self.genome_size, self.genome_part_bit_length), dtype=int)
+        for p in range(self.iterations):
+            print("")
+            print("Iteration: ", p)
+            self.class_hex_value = -1
+            self.best_fitness_score = 0
+
+            self.population = np.zeros((self.population_size, self.genome_size, self.genome_part_bit_length), dtype=int)
+            
+            self.best_solution, self.generations = self.run_genetic_algorithm()
+            self.fitness_score = self.calculate_fitness_score(self.best_solution)
+            self.translation_best_solution = self.translate_genome(self.best_solution, string_=True, chronological=True)
+            
+            self.schedule, none_professors = self.assign_professors(self.translation_best_solution)
+            self.violations.append(none_professors)
+            self.genomes.append(self.schedule)
+            self.dataset_professor_availability = dataset_professor_availability
+
+        # get the minimum value of the violations
+        self.min_violations = min(self.violations)
+        # get the index of the minimum value of the violations
+        self.min_violations_index = self.violations.index(self.min_violations)
+        # get the best genome based on the minimum violations
+        self.best_genome = self.genomes[self.min_violations_index]
         
-        self.best_solution, self.generations = self.run_genetic_algorithm()
-        self.fitness_score = self.calculate_fitness_score(self.best_solution)
-        self.translation_best_solution = self.translate_genome(self.best_solution, string_=True, chronological=True)
-        self.best_solution_hex = self.translate_genome(self.best_solution, hex_=True, chronological=True)
+    def transform_availability_dict(self, availability_dict, timeslots_per_day, days):
+        availability = {}
+        for professor, availability_per_day in availability_dict.items():
+            availability[professor] = {}
+            for day, timeslots in availability_per_day.items():
+                availability[professor][days[day]] = {}
+                for timeslot, is_available in timeslots.items():
+                    availability[professor][days[day]][timeslots_per_day[timeslot]] = is_available
+        return availability
 
-        self.violation_count_saturday_classes = self.get_violation_count_saturday_classes(self.best_solution_hex)
-        self.violation_count_conflicting_classes = self.get_violation_count_conflicting_classes(self.best_solution_hex)
-        self.violation_count_assigning_classes = self.get_violation_count_assigning_classes(self.best_solution_hex)
-        self.violation_count_timeslot_virtual_classes = self.get_violation_count_timeslot_virtual_classes(self.best_solution_hex)
+    def assign_professors(self, genome):
+        none_professors = 0
+        professor_availability = self.transform_availability_dict(self.dataset_professor_availability, self.timeslots_per_day, self.days)
+        for class_scheduling in genome:
+            class_name = class_scheduling['class_data']['class']
+            etapa = self.dataset_classes_semester[self.dataset_classes_semester['DISCIPLINA'] == class_name]['ET'].max()
+            if etapa == 2:
+                class_scheduling['professor'] = 45.0
+            else:
+                for professor, availability in professor_availability.items():
+                    for day, timeslots in availability.items():
+                        for timeslot, is_available in timeslots.items():
+                            if class_scheduling["timeslot_day"] == day and class_scheduling["timeslot"] == timeslot and is_available and class_scheduling["class_data"]["class"] in self.dict_competence_teachers[professor]:
+                                class_scheduling["professor"] = professor
+                                professor_availability[professor][day][timeslot] = False
+                        
+                if "professor" not in class_scheduling.keys():
+                    class_scheduling["professor"] = None
+                    none_professors += 1
 
+        return genome, none_professors
+    
     def print_per_line(self, genome):
         for i in genome:
             print(i)
@@ -461,7 +504,8 @@ input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
 input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
 
 input_semester = "even"
-# input_semester = "odd"
+input_semester = "odd"
+input_iterations = 10
 
 input_timeslots_per_day = [
     "12:45-14:25",
@@ -476,7 +520,6 @@ input_generation_limit = 5000
 input_fitness_limit = 1
 input_mutation_rate = 0.03
 input_population_size = 14
-# input_early_stopping = 5000
 
 input_professor_availability = {}
 for professor in input_dataset_competence_teachers['PROFESSOR CODE'].unique():
@@ -485,7 +528,7 @@ for professor in input_dataset_competence_teachers['PROFESSOR CODE'].unique():
         input_professor_availability[professor][day_index] = {}
         for timeslot_index in range(len(input_timeslots_per_day)):
             input_professor_availability[professor][day_index][timeslot_index] = False
-            if np.random.rand() < 0.4:
+            if np.random.rand() < 0.7:
                 input_professor_availability[professor][day_index][timeslot_index] = True
 
 start = time.time()
@@ -493,11 +536,10 @@ start = time.time()
 class_schedule = GenerateClassSchedule(dataset_classes=input_dataset_classes, dataset_competence_teachers=input_dataset_competence_teachers,
                                        dataset_professor_availability=input_professor_availability ,semester=input_semester, timeslots_per_day=input_timeslots_per_day,
                                        class_groups = input_class_groups, generation_limit=input_generation_limit, fitness_limit=input_fitness_limit,
-                                       mutation_rate=input_mutation_rate,population_size=input_population_size, early_stopping=None)
+                                       mutation_rate=input_mutation_rate,population_size=input_population_size, iterations=input_iterations)
 end = time.time()
 
-print("Generations: ", class_schedule.generations)
-print("Time: ", end - start)
 print("Best solution: ")
-class_schedule.print_per_line(class_schedule.translation_best_solution)
-print("Fitness score: ", class_schedule.fitness_score)
+print("Found on index: ", class_schedule.min_violations_index)
+print("Number of violations: ", class_schedule.min_violations)
+class_schedule.print_per_line(class_schedule.best_genome)
