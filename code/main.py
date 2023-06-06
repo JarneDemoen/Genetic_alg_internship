@@ -21,7 +21,8 @@ class GenerateClassSchedule:
         self.mutation_rate = mutation_rate
         self.population_size = population_size
         self.professors = self.dataset_competence_teachers['PROFESSOR CODE'].unique()
-        self.days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday']
+        # self.days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday']
+        self.days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
         self.class_types = ['AT', 'AP', 'AV']
         self.class_groups = class_groups
         self.dataset_classes_semester = self.get_classes_semester(self.dataset_classes, self.semester)
@@ -282,14 +283,14 @@ class GenerateClassSchedule:
 
         return translation
 
-    def get_violation_count_saturday_classes(self, genome):
-        self.incorrectly_assigned_saturday_classes = []
-        violations = 0
-        for class_scheduling in genome:
-            if class_scheduling['timeslot_day'] == 5:
-                violations += 1
-                self.incorrectly_assigned_saturday_classes.append(class_scheduling)
-        return violations
+    # def get_violation_count_saturday_classes(self, genome):
+    #     self.incorrectly_assigned_saturday_classes = []
+    #     violations = 0
+    #     for class_scheduling in genome:
+    #         if class_scheduling['timeslot_day'] == 5:
+    #             violations += 1
+    #             self.incorrectly_assigned_saturday_classes.append(class_scheduling)
+    #     return violations
     
     def get_available_timeslots(self, genome):
         available_timeslots = {}
@@ -441,7 +442,7 @@ class GenerateClassSchedule:
         hex_genome = self.translate_genome(genome, hex_=True, chronological=True)
         violations = 0
 
-        violations += self.get_violation_count_saturday_classes(hex_genome)
+        # violations += self.get_violation_count_saturday_classes(hex_genome)
         # violations += self.get_violation_count_assigning_professor(hex_genome)
         # violations += self.get_violation_count_consecutive_classes(hex_genome)
         violations += self.get_violation_count_conflicting_classes(hex_genome)
@@ -513,13 +514,15 @@ input_timeslots_per_day = [
     "19:00-20:40",
     "20:55-22:35"]
 
-days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday']
+# days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday']
+days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+
 input_class_groups = ["A", "B"]
 
 input_generation_limit = 5000
 input_fitness_limit = 1
-input_mutation_rate = 0.03
-input_population_size = 14
+input_mutation_rate = 0.01
+input_population_size = 6
 
 input_professor_availability = {}
 for professor in input_dataset_competence_teachers['PROFESSOR CODE'].unique():
