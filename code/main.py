@@ -505,7 +505,7 @@ input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
 input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
 
 input_semester = "even"
-input_semester = "odd"
+# input_semester = "odd"
 input_iterations = 10
 
 input_timeslots_per_day = [

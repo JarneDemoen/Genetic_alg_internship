@@ -1,0 +1,99 @@
+@font-face {
+    font-family: 'UNAERPFONT';
+    src: url('../fonts/Trade Gothic LT Condensed No. 18.ttf');
+    font-weight: normal;
+}
+
+:root{
+    --UNAERP-blue: #032565;
+    --UNAERP-dark-blue: #001A4F;
+    --UNAERP-yellow: #F2D200;
+}
+
+html {
+    font-size: 100%;
+    line-height: 1.5;
+    font-family: 'Open Sans', arial, sans-serif;
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: white;
+}
+
+body, h1{
+    margin: 0;
+    padding: 0;
+}
+
+*,
+*:before,
+*:after {
+box-sizing: inherit;
+}
+
+.timetable-header {
+    min-height: 50px;
+    box-sizing: border-box;
+    background-image: url(../imgs/desktop-header-background.png);
+    background-color: var(--UNAERP-blue) !important;
+    background-position: left top;
+    background-repeat: no-repeat;
+    padding-left: 16px;
+    padding-top: 8px;
+}
+
+.timetable-header-logo {
+    background-image: url(../svg/desktop-logo.svg);
+    background-repeat: no-repeat;
+    overflow: hidden;
+    display: block;
+    height: 32px;
+    /* padding: 10px 0 0 105px; */
+    padding: 5px 0 0 105px;
+    background-position: left center;
+    background-repeat: no-repeat;
+    font-family: 'Open Sans', sans-serif;
+    font-size: .5em;
+    font-weight: normal;
+    color: white;
+    text-shadow: none;
+    text-decoration: none;
+}
+
+.timetable-title{
+    font-size: 30px;
+    color: var(--UNAERP-dark-blue);
+    text-align: center;
+    font-weight: normal;
+    margin-top: 18px;
+}
+
+.timetable-days{
+    display: flex;
+    justify-content: space-between;
+    margin-left: 10%;
+    margin-right: 10%;
+    height: 48px;
+    border-radius: 5px;
+    margin-top: 18px;
+    background-color: var(--UNAERP-yellow);
+}
+
+.timetable-day{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    color: var(--UNAERP-dark-blue);
+    font-size: 18px;
+    font-weight: normal;
+}
+
+.timetable-timeslots{
+    display: flex;
+    flex-direction: column;
+    margin-left: 92px;
+    border-radius: 5px;
+    margin-top: -12px;
+}
