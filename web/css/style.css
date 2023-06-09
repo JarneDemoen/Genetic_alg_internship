@@ -52,48 +52,65 @@ box-sizing: inherit;
     padding: 5px 0 0 105px;
     background-position: left center;
     background-repeat: no-repeat;
-    font-family: 'Open Sans', sans-serif;
-    font-size: .5em;
+    font-family: 'UNAERPFONT', sans-serif;
+    font-size: 24px;
     font-weight: normal;
     color: white;
     text-shadow: none;
     text-decoration: none;
 }
 
-.timetable-title{
-    font-size: 30px;
+.schedule-title{
+    font-size: 36px;
+    font-weight: normal;
+    font-family: 'UNAERPFONT';
     color: var(--UNAERP-dark-blue);
     text-align: center;
-    font-weight: normal;
-    margin-top: 18px;
+    margin-top: 8px;
+    margin-bottom: 8px;
 }
 
-.timetable-days{
-    display: flex;
-    justify-content: space-between;
-    margin-left: 10%;
-    margin-right: 10%;
-    height: 48px;
-    border-radius: 5px;
-    margin-top: 18px;
-    background-color: var(--UNAERP-yellow);
-}
-
-.timetable-day{
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
+.schedule-selection{
+    margin-right: 8px;
+    border: none;
+    font-size: 36px;
     color: var(--UNAERP-dark-blue);
+    font-family: 'UNAERPFONT';
+}
+
+.schedule-selection option{
     font-size: 18px;
+    font-family: 'UNAERPFONT';
+    color: var(--UNAERP-dark-blue);
+}
+
+.schedule-day-title{
+    width: 80%;
+    background-color: var(--UNAERP-yellow);
+    border-radius: 5px;
+    height: 60px;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    font-size: 16px;
+    font-family: 'UNAERPFONT';
+    color: var(--UNAERP-dark-blue);
+}
+
+.schedule-day-title h2{
     font-weight: normal;
 }
 
-.timetable-timeslots{
-    display: flex;
-    flex-direction: column;
-    margin-left: 92px;
-    border-radius: 5px;
-    margin-top: -12px;
+.schedule-grid{
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(12, 1fr);
+    grid-gap: 5px;
+    margin-top: 8px;
+    margin-bottom: 8px;
 }
