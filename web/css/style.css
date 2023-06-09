@@ -9,6 +9,17 @@
     --UNAERP-dark-blue: #001A4F;
     --UNAERP-yellow: #F2D200;
     --UNAERP-grey: #7B7B7B;
+
+    --UNAERP-color-1: #FF0000;
+    --UNAERP-color-2: #00FF00;
+    --UNAERP-color-3: #0000FF;
+    --UNAERP-color-4: #FFFF00;
+    --UNAERP-color-5: #00FFFF;
+    --UNAERP-color-6: #FF00FF;
+    --UNAERP-color-7: #C0C0C0;
+    --UNAERP-color-8: #808080;
+    --UNAERP-color-9: #800000;
+    --UNAERP-color-10: #808000;
 }
 
 html {
@@ -124,13 +135,53 @@ box-sizing: inherit;
     transform: translateX(-50%);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: repeat(17, 80px);
-    border-bottom: 1px solid #7B7B7B50;
+    grid-template-rows: repeat(17, 120px);
 }
 
 .timeslots{
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(17, 80px);
+    grid-template-rows: repeat(17, 120px);
     margin-top: -14px;
 }
+
+.schedule-grid > div::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: #7B7B7B50;
+}
+
+.schedule-grid > div {
+    position: relative;
+}
+
+.schedule-grid > div.scheduled-class {
+    grid-column: 2; /* Adjust the column number here */
+    grid-row: 3; /* Adjust the row number here */
+}
+
+.scheduled-class-wrapper{
+    display: flex;
+    height: 100%;
+}
+
+.scheduled-class-color{
+    width: 20px;
+    height: 100%;
+    background-color: var(--UNAERP-color-5);
+    border-radius: 8px 0px 0px 8px;
+}
+
+.scheduled-class-content{
+    width: 100%;
+    height: 100%;
+    background-color: var(--UNAERP-dark-blue);
+    border-radius: 0px 8px 8px 0px;
+    margin-left: 2px;
+}
+
+  
