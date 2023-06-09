@@ -8,6 +8,7 @@
     --UNAERP-blue: #032565;
     --UNAERP-dark-blue: #001A4F;
     --UNAERP-yellow: #F2D200;
+    --UNAERP-grey: #7B7B7B;
 }
 
 html {
@@ -103,14 +104,33 @@ box-sizing: inherit;
     font-weight: normal;
 }
 
+.schedule{
+    display: flex;
+}
+
+.schedule h3{
+    font-family: 'UNAERPFONT';
+    font-size: 16px;
+    color: var(--UNAERP-grey);
+    font-weight: lighter;
+    margin-left: 16px;
+    margin-top: 0px;
+}
+
 .schedule-grid{
     width: 80%;
-    margin-left: auto;
-    margin-right: auto;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: repeat(12, 1fr);
-    grid-gap: 5px;
-    margin-top: 8px;
-    margin-bottom: 8px;
+    grid-template-rows: repeat(17, 80px);
+    border-bottom: 1px solid #7B7B7B50;
+}
+
+.timeslots{
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(17, 80px);
+    margin-top: -14px;
 }
