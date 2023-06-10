@@ -4,6 +4,12 @@
     font-weight: normal;
 }
 
+@font-face {
+    font-family: 'Open Sans';
+    src: url('../fonts/OpenSans-Regular.ttf');
+    font-weight: normal;
+}
+
 :root{
     --UNAERP-blue: #032565;
     --UNAERP-dark-blue: #001A4F;
@@ -25,14 +31,14 @@
 html {
     font-size: 100%;
     line-height: 1.5;
-    font-family: 'Open Sans', arial, sans-serif;
+    font-family: 'Open Sans', sans-serif;
     box-sizing: border-box;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: white;
 }
 
-body, h1{
+body, h1, p, h2{
     margin: 0;
     padding: 0;
 }
@@ -52,6 +58,7 @@ box-sizing: inherit;
     background-repeat: no-repeat;
     padding-left: 16px;
     padding-top: 8px;
+    font-family: 'UNAERPFONT';
 }
 
 .timetable-header-logo {
@@ -60,11 +67,9 @@ box-sizing: inherit;
     overflow: hidden;
     display: block;
     height: 32px;
-    /* padding: 10px 0 0 105px; */
     padding: 5px 0 0 105px;
     background-position: left center;
     background-repeat: no-repeat;
-    font-family: 'UNAERPFONT', sans-serif;
     font-size: 24px;
     font-weight: normal;
     color: white;
@@ -75,11 +80,11 @@ box-sizing: inherit;
 .schedule-title{
     font-size: 36px;
     font-weight: normal;
-    font-family: 'UNAERPFONT';
     color: var(--UNAERP-dark-blue);
     text-align: center;
     margin-top: 8px;
     margin-bottom: 8px;
+    font-family: 'UNAERPFONT';
 }
 
 .schedule-selection{
@@ -103,12 +108,14 @@ box-sizing: inherit;
     height: 60px;
     margin-left: auto;
     margin-right: auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: 60px;
     font-size: 16px;
-    font-family: 'UNAERPFONT';
     color: var(--UNAERP-dark-blue);
+    align-items: center;
+    justify-items: center;
+    font-family: 'UNAERPFONT';
 }
 
 .schedule-day-title h2{
@@ -120,13 +127,18 @@ box-sizing: inherit;
 }
 
 .schedule h3{
-    font-family: 'UNAERPFONT';
     font-size: 16px;
     color: var(--UNAERP-grey);
     font-weight: lighter;
     margin-left: 16px;
     margin-top: 0px;
 }
+
+.schedule-grid > div {
+    position: relative;
+    border-bottom: 1px solid #7B7B7B50; /* Change the color and style as desired */
+}
+
 
 .schedule-grid{
     width: 80%;
@@ -138,28 +150,19 @@ box-sizing: inherit;
     grid-template-rows: repeat(17, 120px);
 }
 
+.schedule-grid > div{
+    border-bottom: 1px solid #7B7B7B50;
+}
+
 .timeslots{
     display: grid;
     grid-template-columns: 1fr;
     grid-template-rows: repeat(17, 120px);
     margin-top: -14px;
+    font-family: 'UNAERPFONT';
 }
 
-.schedule-grid > div::before {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 1px;
-    background-color: #7B7B7B50;
-}
-
-.schedule-grid > div {
-    position: relative;
-}
-
-.schedule-grid > div.scheduled-class {
+.schedule-grid > div.scheduled-class-half {
     grid-column: 2; /* Adjust the column number here */
     grid-row: 3; /* Adjust the row number here */
 }
@@ -169,19 +172,74 @@ box-sizing: inherit;
     height: 100%;
 }
 
-.scheduled-class-color{
+.scheduled-class-color-5{
     width: 20px;
     height: 100%;
     background-color: var(--UNAERP-color-5);
     border-radius: 8px 0px 0px 8px;
 }
 
+.scheduled-class-color-2{
+    width: 20px;
+    height: 100%;
+    background-color: var(--UNAERP-color-2);
+    border-radius: 8px 0px 0px 8px;
+}
+
 .scheduled-class-content{
     width: 100%;
-    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.scheduled-class-content-half{
+    height: 90px;
     background-color: var(--UNAERP-dark-blue);
-    border-radius: 0px 8px 8px 0px;
+    border-radius: 0px 8px 0px 0px;
     margin-left: 2px;
 }
 
-  
+.scheduled-class-content-full{
+    height: 210px;
+    background-color: var(--UNAERP-dark-blue);
+    border-radius: 0px 8px 0px 0px;
+    margin-left: 2px;
+}
+
+.scheduled-class-content-half-time{
+    height: 30px;
+    background-color: var(--UNAERP-dark-blue);
+    border-radius: 0px 0px 8px 0px;
+    margin-left: 2px;
+    margin-top: 2px;
+}
+
+.class-time{
+    font-size: 16px;
+    color: white;
+    margin-left: 8px;
+    margin-top: 2px;
+}
+
+.class-code-type{
+    font-size: 16px;
+    color: white;
+    margin-left: 8px;
+}
+
+.class-name{
+    font-size: 20px;
+    color: white;
+    margin-left: 8px;
+}
+
+.professor{
+    font-size: 14px;
+    color: white;
+    margin-left: 8px;
+}
+
+.schedule-grid > div.scheduled-class-full {
+    grid-column: 4; /* Adjust the column number here */
+    grid-row: span 2; /* Adjust the row number here */
+}
