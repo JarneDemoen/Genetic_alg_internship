@@ -7,6 +7,14 @@ import time
 # making sure the current working directory is the same as the file path
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+@app.route('/generate_schedule', methods=['POST'])
+def generate_schedule():
+    
+
 class GenerateClassSchedule:
     def __init__(self, dataset_classes, dataset_competence_teachers, dataset_professor_availability, semester, 
                  timeslots_per_day, class_groups, generation_limit, fitness_limit, mutation_rate, population_size, iterations):

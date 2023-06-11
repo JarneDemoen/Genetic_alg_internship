@@ -84,21 +84,39 @@ box-sizing: inherit;
     text-align: center;
     margin-top: 8px;
     margin-bottom: 8px;
+    justify-content: center;
     font-family: 'UNAERPFONT';
+    display: flex;
+    align-items: center;
+}
+
+.subtitle{
+    font-size: 24px;
+    font-weight: normal;
+    color: var(--UNAERP-dark-blue);
+    margin-top: 8px;
+    margin-bottom: 8px;
+    justify-content: center;
+    align-content: center;
+    font-family: 'UNAERPFONT';
+    display: flex;
 }
 
 .schedule-selection{
-    margin-right: 8px;
+    margin-right: 24px;
+    margin-left: 8px;
     border: none;
     font-size: 36px;
     color: var(--UNAERP-dark-blue);
     font-family: 'UNAERPFONT';
+    cursor: pointer;
 }
 
 .schedule-selection option{
     font-size: 18px;
     font-family: 'UNAERPFONT';
     color: var(--UNAERP-dark-blue);
+    cursor: pointer;
 }
 
 .schedule-day-title{
@@ -175,7 +193,7 @@ box-sizing: inherit;
 .scheduled-class-color-5{
     width: 20px;
     height: 100%;
-    background-color: var(--UNAERP-color-5);
+    background-color: var(--UNAERP-color-9);
     border-radius: 8px 0px 0px 8px;
 }
 
@@ -242,4 +260,37 @@ box-sizing: inherit;
 .schedule-grid > div.scheduled-class-full {
     grid-column: 4; /* Adjust the column number here */
     grid-row: span 2; /* Adjust the row number here */
+}
+
+.left-arrow{
+    width: 16px;
+    height: 16px;
+    transform: rotate(180deg);
+    cursor: pointer;
+    align-self: center;
+    display: none;
+}
+
+.right-arrow{
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    align-self: center;
+}
+
+.generate-schedule-button{
+    height: 40px;
+    width: 150px;
+    background-color: var(--UNAERP-dark-blue);
+    border-radius: 5px;  
+    cursor: pointer;
+    border: none;
+    color: white;
+    font-size: 16px;
+    font-family: 'UNAERPFONT';
+    margin: 0px;
+    /* center the text of the button */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timetable UNAERP</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/normalize.css">
+    <script src="./script/script.js"></script>
 </head>
 <body>
     <header class="timetable-header">
@@ -16,8 +16,13 @@
             </a>
         </h1>
     </header>
-    <h1 class="schedule-title">
-        Semester 
+    <div class="subtitle">
+        <img class="left-arrow" src="./svg/arrow-icon.svg" alt="">
+        <p class="period">February-June</p>
+        <img class="right-arrow" src="./svg/arrow-icon.svg" alt="">
+    </div>
+    <div class="schedule-title">
+        Semester
         <select class="schedule-selection">
             <option value="1">1</option>
             <option value="2">2</option>
@@ -33,7 +38,11 @@
             <option value="A">A</option>
             <option value="B">B</option>
         </select>
-    </h1>
+        <div class="generate-schedule-button">
+            Regenerate Schedule
+        </div>
+    </div>
+
     <div class="schedule-day-title">
         <h2>Monday</h2>
         <h2>Tuesday</h2>
@@ -62,7 +71,7 @@
             <h3>11:00 pm</h3>
         </div>
         <div class="schedule-grid">
-            <div class="scheduled-class-half">
+            <!-- <div class="scheduled-class-half">
                 <div class="scheduled-class-wrapper">
                     <div class="scheduled-class-color-5"></div>
                     <div class="scheduled-class-content">
@@ -76,59 +85,22 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="scheduled-class-full">
+            </div> -->
+            <!-- <div class="scheduled-class-full">
                 <div class="scheduled-class-wrapper">
                     <div class="scheduled-class-color-2"></div>
                     <div class="scheduled-class-content">
                         <div class="scheduled-class-content-full">
                             <p class="class-code-type">AB322 - Theory</p>
                             <p class="class-name">Matematica Discreta</p>
-                            <p class="professor">Prof: Alexandre Da Silva Mello</p>
+                            <p class="professor">Prof: Karen Bitch</p>
                         </div>
                         <div class="scheduled-class-content-half-time">
                             <p class="class-time">17:10-18:00</p>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div style="grid-column: 1; grid-row: 1;"></div>
-            <div style="grid-column: 1; grid-row: 2;"></div>
-            <div style="grid-column: 1; grid-row: 3;"></div>
-            <div style="grid-column: 1; grid-row: 4;"></div>
-            <div style="grid-column: 1; grid-row: 5;"></div>
-            <div style="grid-column: 1; grid-row: 6;"></div>
-            <div style="grid-column: 1; grid-row: 7;"></div>
-            <div style="grid-column: 1; grid-row: 8;"></div>
-            <div style="grid-column: 1; grid-row: 9;"></div>
-            <div style="grid-column: 1; grid-row: 10;"></div>
-            <div style="grid-column: 1; grid-row: 11;"></div>
-            <div style="grid-column: 1; grid-row: 12;"></div>
-            <div style="grid-column: 1; grid-row: 13;"></div>
-            <div style="grid-column: 1; grid-row: 14;"></div>
-            <div style="grid-column: 1; grid-row: 15;"></div>
-            <div style="grid-column: 1; grid-row: 16;"></div>
-            <div style="grid-column: 1; grid-row: 17;"></div>
-            <div style="grid-column: 2; grid-row: 1;"></div>
-            <div style="grid-column: 2; grid-row: 2;"></div>
-            <div style="grid-column: 2; grid-row: 3;"></div>
-            <div style="grid-column: 2; grid-row: 4;"></div>
-            <div style="grid-column: 2; grid-row: 5;"></div>
-            <div style="grid-column: 2; grid-row: 6;"></div>
-            <div style="grid-column: 2; grid-row: 7;"></div>
-            <div style="grid-column: 2; grid-row: 8;"></div>
-            <div style="grid-column: 2; grid-row: 9;"></div>
-            <div style="grid-column: 2; grid-row: 10;"></div>
-            <div style="grid-column: 2; grid-row: 11;"></div>
-            <div style="grid-column: 2; grid-row: 12;"></div>
-            <div style="grid-column: 2; grid-row: 13;"></div>
-            <div style="grid-column: 2; grid-row: 14;"></div>
-            <div style="grid-column: 2; grid-row: 15;"></div>
-            <div style="grid-column: 2; grid-row: 16;"></div>
-            <div style="grid-column: 2; grid-row: 17;"></div>
-            <div style="grid-column: 4; grid-row: 3;"></div>
-
-
+            </div> -->
         </div>
     </div>
 </body>
