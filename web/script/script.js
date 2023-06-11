@@ -49,11 +49,19 @@ function listenToClickArrow(){
     });
 }
 
+function showTest(jsonObject) {
+    console.log(jsonObject);
+  };
+
+function showSchedule(jsonObject){
+    console.log(jsonObject);
+}
+
 function listenToClickGenerateScheduleButton(){
     HTMLGenerateScheduleButton.addEventListener('click', function(){
-        console.log("Generate Schedule Button Clicked");
-    });
-}
+        handleData(`http://localhost:5000/api/v1/generate_timetable`, showSchedule, 'GET');
+    }
+)};
 
 function init(){
     console.log("DOM Loaded")

@@ -2,18 +2,9 @@
 import numpy as np
 import pandas as pd
 import os 
-import time
 
 # making sure the current working directory is the same as the file path
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-from flask import Flask, request, jsonify
-
-app = Flask(__name__)
-
-@app.route('/generate_schedule', methods=['POST'])
-def generate_schedule():
-    
 
 class GenerateClassSchedule:
     def __init__(self, dataset_classes, dataset_competence_teachers, dataset_professor_availability, semester, 
@@ -506,51 +497,58 @@ class GenerateClassSchedule:
 
         return self.population[0], i+1,
 
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 
-# User inputs
-input_dataset_classes = pd.read_csv('../data/ClassesNoDuplicates.csv', sep=';')
-input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
-input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
+# Start app
+app = Flask(__name__)
+CORS(app)
 
-input_semester = "even"
-# input_semester = "odd"
-input_iterations = 10
+endpoint = '/api/v1'
+    
+@app.route(endpoint + '/generate_timetable', methods=['GET'])
+def generate_schedule():
+    # User inputs
+    input_dataset_classes = pd.read_csv('../data/ClassesNoDuplicates.csv', sep=';')
+    input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
+    input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
 
-input_timeslots_per_day = [
-    "12:45-14:25",
-    "17:10-18:50",
-    "19:00-20:40",
-    "20:55-22:35"]
+    input_semester = "even"
+    # input_semester = "odd"
+    input_iterations = 10
 
-# days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday']
-days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    input_timeslots_per_day = [
+        "12:45-14:25",
+        "17:10-18:50",
+        "19:00-20:40",
+        "20:55-22:35"]
 
-input_class_groups = ["A", "B"]
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
-input_generation_limit = 5000
-input_fitness_limit = 1
-input_mutation_rate = 0.01
-input_population_size = 6
+    input_class_groups = ["A", "B"]
 
-input_professor_availability = {}
-for professor in input_dataset_competence_teachers['PROFESSOR CODE'].unique():
-    input_professor_availability[professor] = {}
-    for day_index in range(len(days)):
-        input_professor_availability[professor][day_index] = {}
-        for timeslot_index in range(len(input_timeslots_per_day)):
-            input_professor_availability[professor][day_index][timeslot_index] = False
-            if np.random.rand() < 0.7:
-                input_professor_availability[professor][day_index][timeslot_index] = True
+    input_generation_limit = 5000
+    input_fitness_limit = 1
+    input_mutation_rate = 0.01
+    input_population_size = 6
 
-start = time.time()
+    input_professor_availability = {}
+    for professor in input_dataset_competence_teachers['PROFESSOR CODE'].unique():
+        input_professor_availability[professor] = {}
+        for day_index in range(len(days)):
+            input_professor_availability[professor][day_index] = {}
+            for timeslot_index in range(len(input_timeslots_per_day)):
+                input_professor_availability[professor][day_index][timeslot_index] = False
+                if np.random.rand() < 0.7:
+                    input_professor_availability[professor][day_index][timeslot_index] = True
 
-class_schedule = GenerateClassSchedule(dataset_classes=input_dataset_classes, dataset_competence_teachers=input_dataset_competence_teachers,
-                                       dataset_professor_availability=input_professor_availability ,semester=input_semester, timeslots_per_day=input_timeslots_per_day,
-                                       class_groups = input_class_groups, generation_limit=input_generation_limit, fitness_limit=input_fitness_limit,
-                                       mutation_rate=input_mutation_rate,population_size=input_population_size, iterations=input_iterations)
-end = time.time()
+    class_schedule = GenerateClassSchedule(dataset_classes=input_dataset_classes, dataset_competence_teachers=input_dataset_competence_teachers,
+                                        dataset_professor_availability=input_professor_availability ,semester=input_semester, timeslots_per_day=input_timeslots_per_day,
+                                        class_groups = input_class_groups, generation_limit=input_generation_limit, fitness_limit=input_fitness_limit,
+                                        mutation_rate=input_mutation_rate,population_size=input_population_size, iterations=input_iterations)
+    data = class_schedule.best_genome
+    return jsonify(data),200
 
-print("Best solution: ")
-print("Found on index: ", class_schedule.min_violations_index)
-print("Number of violations: ", class_schedule.min_violations)
-class_schedule.print_per_line(class_schedule.best_genome)
+if __name__ == '__main__':
+    app.run()
+
