@@ -23,9 +23,20 @@
     --UNAERP-color-5: #00FFFF;
     --UNAERP-color-6: #FF00FF;
     --UNAERP-color-7: #C0C0C0;
-    --UNAERP-color-8: #808080;
+    --UNAERP-color-8: #04043c;
     --UNAERP-color-9: #800000;
     --UNAERP-color-10: #808000;
+    --UNAERP-color-11: #FF6347;
+    --UNAERP-color-12: #800080;
+    --UNAERP-color-13: #008080;
+    --UNAERP-color-14: #808080;
+    --UNAERP-color-15: #196b19;
+    --UNAERP-color-16: #e0ab47d3;
+    --UNAERP-color-17: #b1e0e1;
+    --UNAERP-color-18: #9d4ebf;
+    --UNAERP-color-19: #956c21;
+    --UNAERP-color-20: #FFD700;
+
 }
 
 html {
@@ -180,10 +191,10 @@ box-sizing: inherit;
     font-family: 'UNAERPFONT';
 }
 
-.schedule-grid > div.scheduled-class-half {
-    grid-column: 2; /* Adjust the column number here */
-    grid-row: 3; /* Adjust the row number here */
-}
+/* .schedule-grid > div.scheduled-class-half {
+    grid-column: 2; 
+    grid-row: 3;
+} */
 
 .scheduled-class-wrapper{
     display: flex;

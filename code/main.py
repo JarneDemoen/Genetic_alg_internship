@@ -152,7 +152,7 @@ class GenerateClassSchedule:
                                 organized_classes.append({'class': unique_class,'class_types':class_type,'class_groups': self.class_groups})
                         else:
                             for class_group in self.class_groups:
-                                organized_classes.append({'class': unique_class,'class_types':class_type,'class_groups': class_group})
+                                organized_classes.append({'class': unique_class,'class_types':class_type,'class_groups': [class_group]})
                     else:
                         for i in range(int(nr_at_classes/2)):
                             organized_classes.append({'class': unique_class,'class_types':class_type,'class_groups': ['A']})
@@ -497,11 +497,21 @@ class GenerateClassSchedule:
 
         return self.population[0], i+1,
 
-def add_semester(data, input_dataset_classes):
+def add_variables(data, input_dataset_classes, input_professor_names):
     for class_scheduling in data:
-        class_name = class_scheduling['class_data']['class']
-        etapa = input_dataset_classes[input_dataset_classes['DISCIPLINA'] == class_name]['ET'].max()
+        class_code = class_scheduling['class_data']['class']
+        etapa = input_dataset_classes[input_dataset_classes['DISCIPLINA'] == class_code]['ET'].max()
         class_scheduling['class_data']['semester'] = etapa
+
+        class_name = input_dataset_classes[input_dataset_classes['DISCIPLINA'] == class_code]['NOME'].max()
+        class_scheduling['class_data']['class_name'] = class_name
+
+        if class_scheduling['professor'] != None:
+            professor_name = input_professor_names[input_professor_names['CODE'] == class_scheduling['professor']]['NOME'].values[0]
+            class_scheduling['professor_name'] = professor_name
+        else:
+            class_scheduling['professor_name'] = None
+
     return data
 
 from flask import Flask, jsonify, request
@@ -519,19 +529,20 @@ def generate_schedule(semester):
     input_dataset_classes = pd.read_csv('../data/ClassesNoDuplicates.csv', sep=';')
     input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
     input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
+    input_professor_names = pd.read_csv('../data/Professors.csv', sep=';')
 
     if semester == 'February - June':
         input_semester = 'even'
     elif semester == 'Augustus - December':
         input_semester = 'odd'
 
-    input_iterations = 10
+    input_iterations = 1
 
     input_timeslots_per_day = [
-        "12:45-14:25",
-        "17:10-18:50",
-        "19:00-20:40",
-        "20:55-22:35"]
+        "12:45 - 14:25",
+        "17:10 - 18:50",
+        "19:00 - 20:40",
+        "20:55 - 22:35"]
 
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
@@ -557,7 +568,7 @@ def generate_schedule(semester):
                                         class_groups = input_class_groups, generation_limit=input_generation_limit, fitness_limit=input_fitness_limit,
                                         mutation_rate=input_mutation_rate,population_size=input_population_size, iterations=input_iterations)
     
-    data = add_semester(class_schedule.best_genome, input_dataset_classes)
+    data = add_variables(class_schedule.best_genome, input_dataset_classes, input_professor_names)
     return jsonify(data),200
 
 if __name__ == '__main__':
