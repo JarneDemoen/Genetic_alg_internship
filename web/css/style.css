@@ -279,18 +279,24 @@ box-sizing: inherit;
 }
 
 .generate-schedule-button{
-    height: 40px;
-    width: 150px;
     background-color: var(--UNAERP-dark-blue);
     border-radius: 5px;  
     cursor: pointer;
     border: none;
     color: white;
-    font-size: 16px;
+    font-size: 24px;
     font-family: 'UNAERPFONT';
     margin: 0px;
+    padding: 4px 8px;
     /* center the text of the button */
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.reload-svg{
+    width: 24px;
+    height: 24px;
+    margin-left: 8px;
+    margin-right: 8px;
 }

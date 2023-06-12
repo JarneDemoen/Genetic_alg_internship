@@ -506,16 +506,19 @@ CORS(app)
 
 endpoint = '/api/v1'
     
-@app.route(endpoint + '/generate_timetable', methods=['GET'])
-def generate_schedule():
+@app.route(endpoint + '/generate_timetable/<semester>', methods=['GET'])
+def generate_schedule(semester):
     # User inputs
     input_dataset_classes = pd.read_csv('../data/ClassesNoDuplicates.csv', sep=';')
     input_dataset_classes = input_dataset_classes.sort_values(by=['ET'])
     input_dataset_competence_teachers = pd.read_csv('../data/ClassesPP.csv', sep=';')
 
-    input_semester = "even"
-    # input_semester = "odd"
-    input_iterations = 10
+    if semester == 'February - June':
+        input_semester = 'even'
+    elif semester == 'September - January':
+        input_semester = 'odd'
+
+    input_iterations = 1
 
     input_timeslots_per_day = [
         "12:45-14:25",
