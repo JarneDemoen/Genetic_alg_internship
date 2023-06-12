@@ -497,6 +497,13 @@ class GenerateClassSchedule:
 
         return self.population[0], i+1,
 
+def add_semester(data, input_dataset_classes):
+    for class_scheduling in data:
+        class_name = class_scheduling['class_data']['class']
+        etapa = input_dataset_classes[input_dataset_classes['DISCIPLINA'] == class_name]['ET'].max()
+        class_scheduling['class_data']['semester'] = etapa
+    return data
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
@@ -515,10 +522,10 @@ def generate_schedule(semester):
 
     if semester == 'February - June':
         input_semester = 'even'
-    elif semester == 'September - January':
+    elif semester == 'Augustus - December':
         input_semester = 'odd'
 
-    input_iterations = 1
+    input_iterations = 10
 
     input_timeslots_per_day = [
         "12:45-14:25",
@@ -549,7 +556,8 @@ def generate_schedule(semester):
                                         dataset_professor_availability=input_professor_availability ,semester=input_semester, timeslots_per_day=input_timeslots_per_day,
                                         class_groups = input_class_groups, generation_limit=input_generation_limit, fitness_limit=input_fitness_limit,
                                         mutation_rate=input_mutation_rate,population_size=input_population_size, iterations=input_iterations)
-    data = class_schedule.best_genome
+    
+    data = add_semester(class_schedule.best_genome, input_dataset_classes)
     return jsonify(data),200
 
 if __name__ == '__main__':
