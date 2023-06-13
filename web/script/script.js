@@ -35,8 +35,8 @@ var days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 function drawScheduleLines(occupiedTimeslots){
     console.log("occupiedTimeslots: ",occupiedTimeslots)
     var content = "";
-    for (let i = 0; i < 5; i++) {
-        for (let j = 0; j < 17; j++) {
+    for (let i = 1; i < 6; i++) {
+        for (let j = 1; j < 18; j++) {
             if(occupiedTimeslots.includes(j) && occupiedTimeslotDays.includes(i))
             {
                 continue
@@ -98,10 +98,28 @@ function classTypeString(classType){
     }
 }
 
+function getPixelsToMoveDown(startMinute){
+    startMinute = parseInt(startMinute);
+    return (startMinute / 60) * 90;
+}
+
+function getStartHourAndMinute_2(startHour_1, startMinute_1){
+    startHour_1 = parseInt(startHour_1);
+    startMinute_1 = parseInt(startMinute_1);
+    var startMinute_2 = startMinute_1 + 50;
+    var startHour_2 = startHour_1;
+    if (startMinute_2 >= 60)
+    {
+        startMinute_2 = startMinute_2 - 60;
+        startHour_2 = startHour_1 + 1;
+    }
+    return [String(startHour_2), String(startMinute_2)];
+}
+
 function showScheduleData(scheduleData){
-    occupiedTimeslots = [];
     var content = "";
     for(let i = 0; i < scheduleData.length; i++){
+        console.log("scheduleData[i]: ",scheduleData[i])
         var classTypes = scheduleData[i].class_data.class_types;
         var class_code = scheduleData[i].class_data.class;
         var class_name = scheduleData[i].class_data.class_name;
@@ -112,22 +130,34 @@ function showScheduleData(scheduleData){
         var timeRange = timeslot;
         var startEndTimes = timeRange.split("-");
         var startTime = startEndTimes[0].trim();
-        var endTime = startEndTimes[1].trim();
-        var startHour = startTime.split(":")[0];
-        var endHour = endTime.split(":")[0];
-        var startMinute = startTime.split(":")[1];
-        var endMinute = endTime.split(":")[1];
-        var index_timeslot_start = timeslots.indexOf(startHour);
-        var index_timeslot_end = timeslots.indexOf(endHour);
+        // var endTime = startEndTimes[1].trim();
+        var startHour_1 = startTime.split(":")[0];
+        console.log("startHour_1: ",startHour_1)
+        // var endHour = endTime.split(":")[0];
+        var startMinute_1 = startTime.split(":")[1];
+        console.log("startMinute_1: ",startMinute_1)
+        
+        var index_timeslot_start_1 = timeslots.indexOf(startHour_1);
+        console.log("index_timeslot_start_1: ",index_timeslot_start_1)
         var index_timeslot_day = days.indexOf(timeslot_day);
+        var pixels_to_move_down_1 = getPixelsToMoveDown(startMinute_1);
+        console.log("pixels_to_move_down_1: ",pixels_to_move_down_1)
         
         if (classTypes.length == 2)
         {
+            var startHour_2 = getStartHourAndMinute_2(startHour_1, startMinute_1)[0];
+            console.log("startHour_2: ",startHour_2)
+            var startMinute_2 = getStartHourAndMinute_2(startHour_1, startMinute_1)[1];
+            console.log("startMinute_2: ",startMinute_2)
+            var index_timeslot_start_2 = timeslots.indexOf(startHour_2);
+            console.log("index_timeslot_start_2: ",index_timeslot_start_2)
+            var pixels_to_move_down_2 = getPixelsToMoveDown(startMinute_2);
+            console.log("pixels_to_move_down_2: ",pixels_to_move_down_2)
             var class_type_2 = classTypeString(scheduleData[i].class_data.class_types[1]);
             console.log("class_type_2: ",class_type_2)
 
             content += `
-            <div class="scheduled-class-half" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start + 1}; border-bottom: None">
+            <div class="scheduled-class-half" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start_1 + 1}; border-bottom: None; transform: translateY(${pixels_to_move_down_1}px);">
                 <div class="scheduled-class-wrapper">
                     <div class="scheduled-class-color" style="background-color:var(--UNAERP-color-${i+1})";></div>
                     <div class="scheduled-class-content-half">
@@ -137,7 +167,7 @@ function showScheduleData(scheduleData){
                 </div>
             </div>`
             content += `
-            <div class="scheduled-class-half" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_end + 1}; border-bottom: None">
+            <div class="scheduled-class-half" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start_2 + 1}; border-bottom: None; transform: translateY(${pixels_to_move_down_2}px);">
                 <div class="scheduled-class-wrapper">
                     <div class="scheduled-class-color" style="background-color:var(--UNAERP-color-${i+1})";></div>
                     <div class="scheduled-class-content-half">
@@ -150,7 +180,7 @@ function showScheduleData(scheduleData){
         else
         {
             content += `
-            <div class="scheduled-class-full" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start + 1} / span 2; border-bottom: None">
+            <div class="scheduled-class-full" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start_1 + 1} / span 2; border-bottom: None; transform: translateY(${pixels_to_move_down_1}px);">
                 <div class="scheduled-class-wrapper">
                     <div class="scheduled-class-color" style="background-color:var(--UNAERP-color-${i+1})";></div>
                     <div class="scheduled-class-content">

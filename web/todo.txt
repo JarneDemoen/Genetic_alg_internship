@@ -1,6 +1,5 @@
 - Loading bar
-- Positioning of the schedules in the grid
-- Fix timeslot representation in the html
-- Also visualize the schedules with just one class type
-- Fix visualization font size
+- Fix font size
 - On hover: show timeslot and professor name
+- Fixed days on querySelector
+- Show indicator of current time on schedule
