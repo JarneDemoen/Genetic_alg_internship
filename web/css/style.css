@@ -159,7 +159,7 @@ box-sizing: inherit;
     font-size: 16px;
     color: var(--UNAERP-grey);
     font-weight: lighter;
-    margin-left: 16px;
+    margin-left: 24px;
     margin-top: 0px;
 }
 
@@ -176,17 +176,13 @@ box-sizing: inherit;
     transform: translateX(-50%);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: repeat(17, 120px);
-}
-
-.schedule-grid > div{
-    border-bottom: 1px solid #7B7B7B50;
+    grid-template-rows: repeat(17, 90px);
 }
 
 .timeslots{
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(17, 120px);
+    grid-template-rows: repeat(17, 90px);
     margin-top: -14px;
     font-family: 'UNAERPFONT';
 }
@@ -195,6 +191,14 @@ box-sizing: inherit;
     grid-column: 2; 
     grid-row: 3;
 } */
+.scheduled-class-half, .scheduled-class-full{
+    font-family: 'UNAERPFONT';
+}
+
+.scheduled-class-full{
+    grid-column: 3;
+    grid-row: 3 / span 2;
+}
 
 .scheduled-class-wrapper{
     display: flex;
@@ -219,17 +223,18 @@ box-sizing: inherit;
     width: 100%;
     display: flex;
     flex-direction: column;
+    font-family: 'UNAERPFONT';
 }
 
 .scheduled-class-content-half{
-    height: 90px;
+    height: 100%;
     background-color: var(--UNAERP-dark-blue);
-    border-radius: 0px 8px 0px 0px;
+    border-radius: 0px 8px 8px 0px;
     margin-left: 2px;
 }
 
 .scheduled-class-content-full{
-    height: 210px;
+    height: 100%;
     background-color: var(--UNAERP-dark-blue);
     border-radius: 0px 8px 0px 0px;
     margin-left: 2px;
@@ -254,24 +259,27 @@ box-sizing: inherit;
     font-size: 16px;
     color: white;
     margin-left: 8px;
+    margin-bottom: 8px;
 }
 
 .class-name{
-    font-size: 20px;
+    font-size: 18px;
     color: white;
     margin-left: 8px;
+    margin-right: 8px;
+    line-height: 22px;
 }
 
 .professor{
-    font-size: 14px;
+    font-size: 16px;
     color: white;
     margin-left: 8px;
+    margin-right: 8px;
+    line-height: 16px;
+    margin-top: 8px;
 }
 
-.schedule-grid > div.scheduled-class-full {
-    grid-column: 4; /* Adjust the column number here */
-    grid-row: span 2; /* Adjust the row number here */
-}
+
 
 .left-arrow{
     width: 16px;

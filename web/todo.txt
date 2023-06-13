@@ -3,3 +3,4 @@
 - Fix timeslot representation in the html
 - Also visualize the schedules with just one class type
 - Fix visualization font size
+- On hover: show timeslot and professor name

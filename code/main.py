@@ -149,13 +149,13 @@ class GenerateClassSchedule:
                     if semester < 4:
                         if class_type == "AT":
                             for i in range(int(nr_at_classes/2)):
-                                organized_classes.append({'class': unique_class,'class_types':class_type,'class_groups': self.class_groups})
+                                organized_classes.append({'class': unique_class,'class_types':[class_type],'class_groups': self.class_groups})
                         else:
                             for class_group in self.class_groups:
-                                organized_classes.append({'class': unique_class,'class_types':class_type,'class_groups': [class_group]})
+                                organized_classes.append({'class': unique_class,'class_types':[class_type],'class_groups': [class_group]})
                     else:
                         for i in range(int(nr_at_classes/2)):
-                            organized_classes.append({'class': unique_class,'class_types':class_type,'class_groups': ['A']})
+                            organized_classes.append({'class': unique_class,'class_types':[class_type],'class_groups': ['A']})
 
             if nr_at_classes == 3:
                 if semester < 4:
@@ -510,7 +510,7 @@ def add_variables(data, input_dataset_classes, input_professor_names):
             professor_name = input_professor_names[input_professor_names['CODE'] == class_scheduling['professor']]['NOME'].values[0]
             class_scheduling['professor_name'] = professor_name
         else:
-            class_scheduling['professor_name'] = None
+            class_scheduling['professor_name'] = "To be assigned"
 
     return data
 

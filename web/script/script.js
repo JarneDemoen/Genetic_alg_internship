@@ -19,7 +19,7 @@ var scheduleData = [];
 var occupiedTimeslotDays = [];
 var occupiedTimeslots = [];
 
-var debugMode = true;
+var debugMode = false;
 // var timeslots = [
 //     "07:10","08:00","08:50","09:55","10:45","11:35",
 //     "12:45","13:35","14:25","15:30","16:20","17:10",
@@ -101,48 +101,60 @@ function classTypeString(classType){
 function showScheduleData(scheduleData){
     occupiedTimeslots = [];
     var content = "";
-    var colorIndex = 0;
     for(let i = 0; i < scheduleData.length; i++){
         var classTypes = scheduleData[i].class_data.class_types;
-        if (Array.isArray(classTypes))
+        var class_code = scheduleData[i].class_data.class;
+        var class_name = scheduleData[i].class_data.class_name;
+        var professor_name = scheduleData[i].professor_name;
+        var class_type_1 = classTypeString(scheduleData[i].class_data.class_types[0]);
+        var timeslot = scheduleData[i].timeslot;
+        var timeslot_day = scheduleData[i].timeslot_day;
+        var timeRange = timeslot;
+        var startEndTimes = timeRange.split("-");
+        var startTime = startEndTimes[0].trim();
+        var endTime = startEndTimes[1].trim();
+        var startHour = startTime.split(":")[0];
+        var endHour = endTime.split(":")[0];
+        var startMinute = startTime.split(":")[1];
+        var endMinute = endTime.split(":")[1];
+        var index_timeslot_start = timeslots.indexOf(startHour);
+        var index_timeslot_end = timeslots.indexOf(endHour);
+        var index_timeslot_day = days.indexOf(timeslot_day);
+        
+        if (classTypes.length == 2)
         {
-            console.log(scheduleData[i])
-            var class_code = scheduleData[i].class_data.class;
-            var class_name = scheduleData[i].class_data.class_name;
-            var professor_name = scheduleData[i].professor_name;
-            var class_type_1 = classTypeString(scheduleData[i].class_data.class_types[0]);
             var class_type_2 = classTypeString(scheduleData[i].class_data.class_types[1]);
-            var timeslot = scheduleData[i].timeslot;
-            var timeslot_day = scheduleData[i].timeslot_day;
-            
-            var timeRange = timeslot;
-            var startEndTimes = timeRange.split("-");
-
-            var startTime = startEndTimes[0].trim();
-            var endTime = startEndTimes[1].trim();
-
-            var startHour = startTime.split(":")[0];
-            var endHour = endTime.split(":")[0];
-
-            var startMinute = startTime.split(":")[1];
-            var endMinute = endTime.split(":")[1];
-            
-            var index_timeslot_start = timeslots.indexOf(startHour);
-            var index_timeslot_end = timeslots.indexOf(endHour);
-            var timeslot_day_index = days.indexOf(timeslot_day);
-
-            console.log("index_timeslot_start: ",index_timeslot_start)
-            console.log("index_timeslot_end: ",index_timeslot_end)
-            occupiedTimeslots.push(index_timeslot_start);
-            occupiedTimeslots.push(index_timeslot_end);
-            occupiedTimeslotDays.push(timeslot_day_index);
+            console.log("class_type_2: ",class_type_2)
 
             content += `
-            <div class="scheduled-class-half" style="grid-column: ${timeslot_day_index}; grid-row: ${index_timeslot_start}; border-bottom: None">
+            <div class="scheduled-class-half" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start + 1}; border-bottom: None">
                 <div class="scheduled-class-wrapper">
-                    <div class="scheduled-class-color" style="background-color:var(--UNAERP-color-${colorIndex})";></div>
+                    <div class="scheduled-class-color" style="background-color:var(--UNAERP-color-${i+1})";></div>
+                    <div class="scheduled-class-content-half">
+                        <p class="class-code-type">${class_code} - ${class_type_1}</p>
+                        <p class="class-name">${class_name}</p>
+                    </div>
+                </div>
+            </div>`
+            content += `
+            <div class="scheduled-class-half" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_end + 1}; border-bottom: None">
+                <div class="scheduled-class-wrapper">
+                    <div class="scheduled-class-color" style="background-color:var(--UNAERP-color-${i+1})";></div>
+                    <div class="scheduled-class-content-half">
+                        <p class="class-code-type">${class_code} - ${class_type_2}</p>
+                        <p class="class-name">${class_name}</p>
+                    </div>
+                </div>
+            </div>`
+        }
+        else
+        {
+            content += `
+            <div class="scheduled-class-full" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start + 1} / span 2; border-bottom: None">
+                <div class="scheduled-class-wrapper">
+                    <div class="scheduled-class-color" style="background-color:var(--UNAERP-color-${i+1})";></div>
                     <div class="scheduled-class-content">
-                        <div class="scheduled-class-content-half">
+                        <div class="scheduled-class-content-full">
                             <p class="class-code-type">${class_code} - ${class_type_1}</p>
                             <p class="class-name">${class_name}</p>
                             <p class="professor">Prof: ${professor_name}</p>
@@ -153,24 +165,7 @@ function showScheduleData(scheduleData){
                     </div>
                 </div>
             </div>`
-            content += `
-            <div class="scheduled-class-half" style="grid-column: ${timeslot_day_index}; grid-row: ${index_timeslot_end}; border-bottom: None">
-                <div class="scheduled-class-wrapper">
-                    <div class="scheduled-class-color" style="background-color:var(--UNAERP-color-${colorIndex})";></div>
-                    <div class="scheduled-class-content">
-                        <div class="scheduled-class-content-half">
-                            <p class="class-code-type">${class_code} - ${class_type_2}</p>
-                            <p class="class-name">${class_name}</p>
-                            <p class="professor">Prof: ${professor_name}</p>
-                        </div>
-                        <div class="scheduled-class-content-half-time">
-                            <p class="class-time">${timeslot}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>`
         }
-        colorIndex++;
     }
     content += drawScheduleLines(occupiedTimeslots);
     HTMLSchedule.innerHTML = content;
