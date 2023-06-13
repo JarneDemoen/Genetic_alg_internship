@@ -201,7 +201,7 @@ box-sizing: inherit;
     height: 100%;
 }
 
-.scheduled-class-color-5{
+.scheduled-class-color{
     width: 20px;
     height: 100%;
     background-color: var(--UNAERP-color-9);
