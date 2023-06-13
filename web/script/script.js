@@ -1,6 +1,5 @@
 'use strict';
 
-var HTMLScheduleGrid;
 var HTMLLeftArrow;
 var HTMLRightArrow;
 var HTMLGenerateScheduleButton;
@@ -17,6 +16,9 @@ var scheduleDataEven = [];
 var scheduleDataOdd = [];
 var scheduleData = [];
 
+var occupiedTimeslotDays = [];
+var occupiedTimeslots = [];
+
 var debugMode = false;
 var timeslots = [
     "07:10","08:00","08:50","09:55","10:45","11:35",
@@ -24,14 +26,21 @@ var timeslots = [
     "19:00","19:50","20:55","21:45"]
 var days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
-function drawScheduleLines(){
+function drawScheduleLines(occupiedTimeslots){
     var content = "";
     for (let i = 0; i < 5; i++) {
         for (let j = 0; j < 17; j++) {
-            content += `<div style="grid-column:${i} ; grid-row: ${j};"></div>`
+            if(occupiedTimeslots.includes(j) && occupiedTimeslotDays.includes(i))
+            {
+                continue
+            }
+            else
+            {
+                content += `<div style="grid-column:${i} ; grid-row: ${j};"></div>`
+            }
         }
     }
-    HTMLScheduleGrid.innerHTML = content;
+    HTMLSchedule.innerHTML = content;
 }
 
 function listenToClickArrow(){
@@ -100,6 +109,11 @@ function showScheduleData(scheduleData){
             var timeslot_start = timeslot.split('-')[0];
             var timeslot_start_index = timeslots.indexOf(timeslot_start);
             var timeslot_day_index = days.indexOf(timeslot_day);
+
+            occupiedTimeslots.push([timeslot_start_index]);
+            occupiedTimeslots.push([timeslot_start_index + 1]);
+            occupiedTimeslotDays.push(timeslot_day_index);
+
             console.log("timeslot_start_index: ",timeslot_start_index)
             console.log("timeslot_day_index: ",timeslot_day_index)
 
@@ -158,6 +172,7 @@ function filterScheduleData(scheduleData){
     console.log("Filtered object")
     console.log(filteredscheduleData);
     showScheduleData(filteredscheduleData);
+    drawScheduleLines(occupiedTimeslots);
 }
 
 function getScheduleData(jsonObject){
@@ -562,7 +577,6 @@ function setScheduleData(){
 
 function init(){
     console.log("DOM Loaded")
-    HTMLScheduleGrid = document.querySelector('.schedule-grid');
     HTMLGenerateScheduleButton = document.querySelector('.generate-schedule-button');
     HTMLsemesterSelection = document.querySelector('.js-semester-selection');
     HTMLclassSelection = document.querySelector('.js-class-selection');
@@ -584,7 +598,7 @@ function init(){
     });
 
     listenToClickArrow()
-    drawScheduleLines();
+    drawScheduleLines(occupiedTimeslots);
     listenToClickGenerateScheduleButton();
     setSelection();
 }
