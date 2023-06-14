@@ -21,9 +21,6 @@ var scheduleDataEven = [];
 var scheduleDataOdd = [];
 var scheduleData = [];
 
-var occupiedTimeslotDays = [];
-var occupiedTimeslots = [];
-
 var debugMode = false;
 
 var timeslots = [
@@ -33,19 +30,11 @@ var timeslots = [
 
 var days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
-function drawScheduleLines(occupiedTimeslots){
-    console.log("occupiedTimeslots: ",occupiedTimeslots)
+function drawScheduleLines(){
     var content = "";
     for (let i = 1; i < 6; i++) {
         for (let j = 1; j < 18; j++) {
-            if(occupiedTimeslots.includes(j) && occupiedTimeslotDays.includes(i))
-            {
-                continue
-            }
-            else
-            {
-                content += `<div style="grid-column:${i} ; grid-row: ${j};"></div>`
-            }
+            content += `<div style="grid-column:${i} ; grid-row: ${j};"></div>`
         }
     }
     return content;
@@ -119,7 +108,7 @@ function getStartHourAndMinute_2(startHour_1, startMinute_1){
 
 function showScheduleData(scheduleData){
     var content = "";
-    content += drawScheduleLines(occupiedTimeslots);
+    content += drawScheduleLines();
     for(let i = 0; i < scheduleData.length; i++){
         var classTypes = scheduleData[i].class_data.class_types;
         var class_code = scheduleData[i].class_data.class;
@@ -721,7 +710,7 @@ function init(){
     });
 
     listenToClickArrow()
-    HTMLSchedule.innerHTML = drawScheduleLines(occupiedTimeslots);
+    HTMLSchedule.innerHTML = drawScheduleLines();
     listenToClickGenerateScheduleButton();
     setSelection();
 }

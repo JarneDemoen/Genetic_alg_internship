@@ -151,8 +151,11 @@ class GenerateClassSchedule:
                             for i in range(int(nr_at_classes/2)):
                                 organized_classes.append({'class': unique_class,'class_types':[class_type],'class_groups': self.class_groups})
                         else:
-                            for class_group in self.class_groups:
-                                organized_classes.append({'class': unique_class,'class_types':[class_type],'class_groups': [class_group]})
+                            if nr_at_classes == 2 and nr_av_classes == 2 and class_type == "AV":
+                                organized_classes.append({'class': unique_class,'class_types':[class_type],'class_groups': self.class_groups})
+                            else:
+                                for class_group in self.class_groups:
+                                    organized_classes.append({'class': unique_class,'class_types':[class_type],'class_groups': [class_group]})
                     else:
                         for i in range(int(nr_at_classes/2)):
                             organized_classes.append({'class': unique_class,'class_types':[class_type],'class_groups': ['A']})

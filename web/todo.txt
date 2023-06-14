@@ -1,7 +1,6 @@
 - Virtual classes have to be given at the same time
 - Fixed days on scroll
 - Fix colors
-- Delete lines
 - Fix font size
 - User feedback --> no timetable generated yet
 

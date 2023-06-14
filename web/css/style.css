@@ -197,6 +197,7 @@ box-sizing: inherit;
     padding-bottom: 1px;
     width: 95%;
     justify-self: center;
+    background-color: white;
 }
 
 .scheduled-class-half{
