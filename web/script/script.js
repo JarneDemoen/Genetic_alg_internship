@@ -13,6 +13,9 @@ var HTMLRightArrow;
 var HTMLSchedule;
 var HTMLContentBlur;
 var HTMLLoader;
+var HTMLScheduledClassesHalf;
+var HTMLPopup;
+var HTMLClosePopup;
 
 var scheduleDataEven = [];
 var scheduleDataOdd = [];
@@ -22,10 +25,6 @@ var occupiedTimeslotDays = [];
 var occupiedTimeslots = [];
 
 var debugMode = false;
-// var timeslots = [
-//     "07:10","08:00","08:50","09:55","10:45","11:35",
-//     "12:45","13:35","14:25","15:30","16:20","17:10",
-//     "19:00","19:50","20:55","21:45"]
 
 var timeslots = [
     "07","08","09","10","11","12",
@@ -120,8 +119,8 @@ function getStartHourAndMinute_2(startHour_1, startMinute_1){
 
 function showScheduleData(scheduleData){
     var content = "";
+    content += drawScheduleLines(occupiedTimeslots);
     for(let i = 0; i < scheduleData.length; i++){
-        console.log("scheduleData[i]: ",scheduleData[i])
         var classTypes = scheduleData[i].class_data.class_types;
         var class_code = scheduleData[i].class_data.class;
         var class_name = scheduleData[i].class_data.class_name;
@@ -132,31 +131,32 @@ function showScheduleData(scheduleData){
         var timeRange = timeslot;
         var startEndTimes = timeRange.split("-");
         var startTime = startEndTimes[0].trim();
-        // var endTime = startEndTimes[1].trim();
         var startHour_1 = startTime.split(":")[0];
-        console.log("startHour_1: ",startHour_1)
-        // var endHour = endTime.split(":")[0];
         var startMinute_1 = startTime.split(":")[1];
-        console.log("startMinute_1: ",startMinute_1)
         
         var index_timeslot_start_1 = timeslots.indexOf(startHour_1);
-        console.log("index_timeslot_start_1: ",index_timeslot_start_1)
         var index_timeslot_day = days.indexOf(timeslot_day);
         var pixels_to_move_down_1 = getPixelsToMoveDown(startMinute_1);
-        console.log("pixels_to_move_down_1: ",pixels_to_move_down_1)
         
         if (classTypes.length == 2)
         {
             var startHour_2 = getStartHourAndMinute_2(startHour_1, startMinute_1)[0];
-            console.log("startHour_2: ",startHour_2)
             var startMinute_2 = getStartHourAndMinute_2(startHour_1, startMinute_1)[1];
-            console.log("startMinute_2: ",startMinute_2)
             var index_timeslot_start_2 = timeslots.indexOf(startHour_2);
-            console.log("index_timeslot_start_2: ",index_timeslot_start_2)
             var pixels_to_move_down_2 = getPixelsToMoveDown(startMinute_2);
-            console.log("pixels_to_move_down_2: ",pixels_to_move_down_2)
             var class_type_2 = classTypeString(scheduleData[i].class_data.class_types[1]);
-            console.log("class_type_2: ",class_type_2)
+
+            // startminute 2 has to have 2 digits, add a zero if it only has one digit
+            if (startMinute_2.length == 1)
+            {
+                startMinute_2 = "0" + startMinute_2;
+            }
+
+            var timeslot_1 = startHour_1 + ":" + startMinute_1 + " - " + startHour_2 + ":" + startMinute_2;
+            var timeslot_2 = startHour_2 + ":" + startMinute_2 + " -" + startEndTimes[1]
+
+            console.log("timeslot_1: ",timeslot_1)
+            console.log("timeslot_2: ",timeslot_2)
 
             content += `
             <div class="scheduled-class-half" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start_1 + 1}; border-bottom: None; transform: translateY(${pixels_to_move_down_1}px);">
@@ -165,6 +165,8 @@ function showScheduleData(scheduleData){
                     <div class="scheduled-class-content-half">
                         <p class="class-code-type">${class_code} - ${class_type_1}</p>
                         <p class="class-name">${class_name}</p>
+                        <p class="professor" style="display: none;">${professor_name}</p>
+                        <p class="class-time" style="display: none;">${timeslot_1}</p>
                     </div>
                 </div>
             </div>`
@@ -175,6 +177,8 @@ function showScheduleData(scheduleData){
                     <div class="scheduled-class-content-half">
                         <p class="class-code-type">${class_code} - ${class_type_2}</p>
                         <p class="class-name">${class_name}</p>
+                        <p class="professor" style="display: none;">${professor_name}</p>
+                        <p class="class-time" style="display: none;">${timeslot_2}</p>
                     </div>
                 </div>
             </div>`
@@ -199,8 +203,57 @@ function showScheduleData(scheduleData){
             </div>`
         }
     }
-    content += drawScheduleLines(occupiedTimeslots);
     HTMLSchedule.innerHTML = content;
+    listenToClickScheduledClassesHalf();
+}
+
+function fillContentPopup(HTMLscheduledClass){
+    console.log("Fill content popup")
+    console.log("HTMLscheduledClass: ",HTMLscheduledClass)
+    const childElements = HTMLscheduledClass.children;
+    const childOfChildElements = childElements[0].children;
+    const content = childOfChildElements[1].children;
+    const classCode = content[0].innerHTML.split(" - ")[0];
+    const classType = content[0].innerHTML.split(" - ")[1];
+    const className = content[1].innerHTML;
+    const professorName = content[2].innerHTML;
+    const classTime = content[3].innerHTML;
+
+    console.log("classCode: ",classCode)
+    console.log("classType: ",classType)
+    console.log("className: ",className)
+    console.log("professorName: ",professorName)
+    console.log("classTime: ",classTime)
+    console.log("HTMLPopup: ",HTMLPopup)
+
+    const HTMLPopupContent = document.querySelector('.js-popup-content');
+    var contentString = `
+        <p>${classCode}</p>
+        <p>${className}</p>
+        <p>${classType}</p>
+        <p>${professorName}</p>
+        <p>${classTime}</p>
+        `
+    HTMLPopupContent.innerHTML = contentString;
+}
+
+function handlePopupClose() {
+    console.log("Close popup");
+    HTMLPopup.style.display = "none";
+    blurContent(HTMLPopup, "block");
+    HTMLClosePopup.removeEventListener('click', handlePopupClose);
+}
+
+function listenToClickScheduledClassesHalf(){
+    HTMLScheduledClassesHalf = document.querySelectorAll('.scheduled-class-half');
+    HTMLScheduledClassesHalf.forEach(element => {
+        element.addEventListener('click', function(){
+            HTMLPopup.style.display = "block";
+            blurContent(HTMLPopup, "block");
+            HTMLClosePopup = document.querySelector('.js-close-popup');
+            HTMLClosePopup.addEventListener('click', handlePopupClose);
+            fillContentPopup(element);
+    })});
 }
 
 function filterScheduleData(scheduleData){
@@ -223,7 +276,7 @@ function filterScheduleData(scheduleData){
 }
 
 function getScheduleData(jsonObject){
-    blurContent();
+    blurContent(HTMLLoader, "flex");
     // get the values of the selected options
     var period = document.querySelector('.period').innerHTML;
     if (period == 'Augustus - December')
@@ -238,24 +291,24 @@ function getScheduleData(jsonObject){
     filterScheduleData(jsonObject);
 }
 
-function blurContent(){
+function blurContent(item, display_value){
     if (HTMLContentBlur.style.filter == "blur(5px)")
     {
         HTMLContentBlur.style.filter = "blur(0px)";
-        HTMLLoader.style.display = "none";
+        item.style.display = "none";
         HTMLGenerateScheduleButton.disabled = false;
     }
     else
     {
         HTMLContentBlur.style.filter = "blur(5px)";
-        HTMLLoader.style.display = "flex";
+        item.style.display = display_value;
         HTMLGenerateScheduleButton.disabled = true;
     }
 }
 
 function listenToClickGenerateScheduleButton(){
     HTMLGenerateScheduleButton.addEventListener('click', function(){
-        blurContent();
+        blurContent(HTMLLoader, "flex");
         var period = document.querySelector('.period').innerHTML;
         if (debugMode == false)
         {
@@ -639,6 +692,9 @@ function setScheduleData(){
     }
 }
 
+// for all of the elements of scheduledclassesHalf, create a function that is triggered when the mouse is over the element
+// this function will change the background color of the element to the color of the class
+
 function init(){
     console.log("DOM Loaded")
     HTMLGenerateScheduleButton = document.querySelector('.generate-schedule-button');
@@ -648,6 +704,7 @@ function init(){
     HTMLSchedule = document.querySelector('.js-schedule');
     HTMLContentBlur = document.querySelector('.js-content-wrapper-blur');
     HTMLLoader = document.querySelector('.container-loader');
+    HTMLPopup = document.querySelector('.js-popup');
 
     HTMLLeftArrow = document.querySelector('.left-arrow');
     HTMLRightArrow = document.querySelector('.right-arrow');
