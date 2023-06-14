@@ -11,6 +11,8 @@ var HTMLclassSelection;
 var HTMLLeftArrow;
 var HTMLRightArrow;
 var HTMLSchedule;
+var HTMLContentBlur;
+var HTMLLoader;
 
 var scheduleDataEven = [];
 var scheduleDataOdd = [];
@@ -221,6 +223,7 @@ function filterScheduleData(scheduleData){
 }
 
 function getScheduleData(jsonObject){
+    blurContent();
     // get the values of the selected options
     var period = document.querySelector('.period').innerHTML;
     if (period == 'Augustus - December')
@@ -235,8 +238,24 @@ function getScheduleData(jsonObject){
     filterScheduleData(jsonObject);
 }
 
+function blurContent(){
+    if (HTMLContentBlur.style.filter == "blur(5px)")
+    {
+        HTMLContentBlur.style.filter = "blur(0px)";
+        HTMLLoader.style.display = "none";
+        HTMLGenerateScheduleButton.disabled = false;
+    }
+    else
+    {
+        HTMLContentBlur.style.filter = "blur(5px)";
+        HTMLLoader.style.display = "flex";
+        HTMLGenerateScheduleButton.disabled = true;
+    }
+}
+
 function listenToClickGenerateScheduleButton(){
     HTMLGenerateScheduleButton.addEventListener('click', function(){
+        blurContent();
         var period = document.querySelector('.period').innerHTML;
         if (debugMode == false)
         {
@@ -627,6 +646,8 @@ function init(){
     HTMLclassSelection = document.querySelector('.js-class-selection');
     HTMLperiodSelection = document.querySelectorAll('.js-period');
     HTMLSchedule = document.querySelector('.js-schedule');
+    HTMLContentBlur = document.querySelector('.js-content-wrapper-blur');
+    HTMLLoader = document.querySelector('.container-loader');
 
     HTMLLeftArrow = document.querySelector('.left-arrow');
     HTMLRightArrow = document.querySelector('.right-arrow');

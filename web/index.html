@@ -10,93 +10,103 @@
     <script src="./script/datahandler.js"></script>
 </head>
 <body>
-    <header class="timetable-header">
-        <h1>
-            <a href="#" class="timetable-header-logo" title="timetable">
-                | Timetable UNAERP
-            </a>
-        </h1>
-    </header>
-    <div class="subtitle">
-        <img class="left-arrow js-period" src="./svg/arrow-icon.svg" alt="">
-        <p class="period">February - June</p>
-        <img class="right-arrow js-period" src="./svg/arrow-icon.svg" alt="">
+    <div class="container-loader">
+        <svg class="loader" version="1.1" id="L9" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 100 100" enable-background="new 0 0 0 0" xml:space="preserve">
+            <path fill="#F2D200" d="M73,50c0-12.7-10.3-23-23-23S27,37.3,27,50 M30.9,50c0-10.5,8.5-19.1,19.1-19.1S69.1,39.5,69.1,50">
+            <animateTransform attributeName="transform" attributeType="XML" type="rotate" dur="1s" from="0 50 50" to="360 50 50" repeatCount="indefinite"></animateTransform>
+            </path>
+        </svg>
+        <p class="loader-text">Generating timetable...</p>
     </div>
-    <div class="schedule-title">
-        Semester
-        <select class="schedule-selection js-semester-selection">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-            <option value="7">7</option>
-            <option value="8">8</option>
-        </select>
-        Class
-        <select class="schedule-selection js-class-selection">
-            <option value="A">A</option>
-            <option value="B">B</option>
-        </select>
-        <div class="generate-schedule-button">
-            <img class="reload-svg" src="./svg/reload.svg" alt="">
-            Generate
+    <div class="js-content-wrapper-blur">
+        <header class="timetable-header">
+            <h1>
+                <a href="#" class="timetable-header-logo" title="timetable">
+                    | Timetable UNAERP
+                </a>
+            </h1>
+        </header>
+        <div class="subtitle">
+            <img class="left-arrow js-period" src="./svg/arrow-icon.svg" alt="">
+            <p class="period">February - June</p>
+            <img class="right-arrow js-period" src="./svg/arrow-icon.svg" alt="">
         </div>
-    </div>
+        <div class="schedule-title">
+            Semester
+            <select class="schedule-selection js-semester-selection">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+            </select>
+            Class
+            <select class="schedule-selection js-class-selection">
+                <option value="A">A</option>
+                <option value="B">B</option>
+            </select>
+            <button class="generate-schedule-button">
+                <img class="reload-svg" src="./svg/reload.svg" alt="">
+                Generate
+            </>
+        </div>
 
-    <div class="schedule-day-title">
-        <h2>Monday</h2>
-        <h2>Tuesday</h2>
-        <h2>Wednesday</h2>
-        <h2>Thursday</h2>
-        <h2>Friday</h2>
-    </div>
-    <div class="schedule">
-        <div class="timeslots">
-            <h3>07:00</h3>
-            <h3>08:00</h3>
-            <h3>09:00</h3>
-            <h3>10:00</h3>
-            <h3>11:00</h3>
-            <h3>12:00</h3>
-            <h3>13:00</h3>
-            <h3>14:00</h3>
-            <h3>15:00</h3>
-            <h3>16:00</h3>
-            <h3>17:00</h3>
-            <h3>18:00</h3>
-            <h3>19:00</h3>
-            <h3>20:00</h3>
-            <h3>21:00</h3>
-            <h3>22:00</h3>
-            <h3>23:00</h3>
+        <div class="schedule-day-title">
+            <h2>Monday</h2>
+            <h2>Tuesday</h2>
+            <h2>Wednesday</h2>
+            <h2>Thursday</h2>
+            <h2>Friday</h2>
         </div>
-        <div class="schedule-grid js-schedule">
-            <!-- <div class="scheduled-class-half">
-                <div class="scheduled-class-wrapper">
-                    <div class="scheduled-class-color"></div>
-                    <div class="scheduled-class-content-half">
-                        <p class="class-code-type">AB322 - Theory</p>
-                        <p class="class-name">Matematica Discreta</p>
-                    </div>
-                </div>
+        <div class="schedule">
+            <div class="timeslots">
+                <h3>07:00</h3>
+                <h3>08:00</h3>
+                <h3>09:00</h3>
+                <h3>10:00</h3>
+                <h3>11:00</h3>
+                <h3>12:00</h3>
+                <h3>13:00</h3>
+                <h3>14:00</h3>
+                <h3>15:00</h3>
+                <h3>16:00</h3>
+                <h3>17:00</h3>
+                <h3>18:00</h3>
+                <h3>19:00</h3>
+                <h3>20:00</h3>
+                <h3>21:00</h3>
+                <h3>22:00</h3>
+                <h3>23:00</h3>
             </div>
-            <div class="scheduled-class-full">
-                <div class="scheduled-class-wrapper">
-                    <div class="scheduled-class-color-2"></div>
-                    <div class="scheduled-class-content">
-                        <div class="scheduled-class-content-full">
+            <div class="schedule-grid js-schedule">
+                <!-- <div class="scheduled-class-half">
+                    <div class="scheduled-class-wrapper">
+                        <div class="scheduled-class-color"></div>
+                        <div class="scheduled-class-content-half">
                             <p class="class-code-type">AB322 - Theory</p>
                             <p class="class-name">Matematica Discreta</p>
-                            <p class="professor">Prof: Alexandre Da Silva Mello</p>
-                        </div>
-                        <div class="scheduled-class-content-half-time">
-                            <p class="class-time">17:10-18:00</p>
                         </div>
                     </div>
                 </div>
-            </div> -->
+                <div class="scheduled-class-full">
+                    <div class="scheduled-class-wrapper">
+                        <div class="scheduled-class-color-2"></div>
+                        <div class="scheduled-class-content">
+                            <div class="scheduled-class-content-full">
+                                <p class="class-code-type">AB322 - Theory</p>
+                                <p class="class-name">Matematica Discreta</p>
+                                <p class="professor">Prof: Alexandre Da Silva Mello</p>
+                            </div>
+                            <div class="scheduled-class-content-half-time">
+                                <p class="class-time">17:10-18:00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
+            </div>
         </div>
     </div>
 </body>

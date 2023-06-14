@@ -1,5 +1,9 @@
-- Loading bar
-- Fix font size
 - On hover: show timeslot and professor name
-- Fixed days on querySelector
+- Fixed days on scroll
+- Fix colors
+- Delete lines
+
+EXTRA
+- Fix font size
 - Show indicator of current time on schedule
+
