@@ -47,14 +47,14 @@ function listenToClickArrow(){
     // add an event listener to all of the elements with the class .js-period
     HTMLperiodSelection.forEach(element => {
         element.addEventListener('click', function(){
-            if (period == "Augustus - December")
+            if (period == "August - December")
             {
                 period = "February - June";
                 scheduleData = scheduleDataEven;
             }
             else
             {
-                period = "Augustus - December";
+                period = "August - December";
                 scheduleData = scheduleDataOdd;
             }
             HTMLperiod.innerHTML = period;
@@ -278,7 +278,7 @@ function getScheduleData(jsonObject){
     blurContent(HTMLLoader, "flex");
     // get the values of the selected options
     var period = document.querySelector('.period').innerHTML;
-    if (period == 'Augustus - December')
+    if (period == 'August - December')
     {
         scheduleDataOdd = jsonObject;
     }
@@ -619,7 +619,7 @@ function setSelection(){
     // in the selection of .js-semester-selection, disable the even options
     var period = document.querySelector('.period').innerHTML;
 
-    if (period == 'Augustus - December')
+    if (period == 'August - December')
     {
         // set the selection to the first option
         HTMLsemesterSelection.selectedIndex = 0;
@@ -681,7 +681,7 @@ function setTurmaSelection(){
 
 function setScheduleData(){
     var period = document.querySelector('.period').innerHTML;
-    if (period == 'Augustus - December')
+    if (period == 'August - December')
     {
         scheduleData = scheduleDataOdd;
     }

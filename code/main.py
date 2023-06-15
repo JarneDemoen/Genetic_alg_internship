@@ -536,7 +536,7 @@ def generate_schedule(semester):
 
     if semester == 'February - June':
         input_semester = 'even'
-    elif semester == 'Augustus - December':
+    elif semester == 'August - December':
         input_semester = 'odd'
 
     input_iterations = 1
