@@ -16,6 +16,13 @@
     font-weight: normal;
 }
 
+/* add the bold font */
+@font-face {
+    font-family: 'Open Sans Bold';
+    src: url('../fonts/OpenSans-Bold.ttf');
+    font-weight: normal;
+}
+
 :root{
     --UNAERP-blue: #032565;
     --UNAERP-dark-blue: #001A4F;
@@ -56,6 +63,10 @@ body, h1, p, h2{
 *:before,
 *:after {
 box-sizing: inherit;
+}
+
+.period{
+    font-family: 'Open Sans Bold';
 }
 
 .timetable-header {
@@ -298,19 +309,21 @@ box-sizing: inherit;
 }
 
 .left-arrow{
-    width: 12px;
-    height: 12px;
-    transform: rotate(180deg);
+    width: 16px;
+    height: 16px;
     cursor: pointer;
     align-self: center;
     display: none;
+    transform: translateY(2px);
+    transform: rotate(180deg);
 }
 
 .right-arrow{
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
     cursor: pointer;
     align-self: center;
+    transform: translateY(2px);
 }
 
 .generate-schedule-button{
