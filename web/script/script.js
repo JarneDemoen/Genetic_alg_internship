@@ -13,13 +13,14 @@ var HTMLRightArrow;
 var HTMLSchedule;
 var HTMLContentBlur;
 var HTMLLoader;
-var HTMLScheduledClassesHalf;
+var HTMLScheduledClasses;
 var HTMLPopup;
 var HTMLClosePopup;
 
 var scheduleDataEven = [];
 var scheduleDataOdd = [];
 var scheduleData = [];
+var uniqueClasses = []
 
 var debugMode = false;
 
@@ -90,7 +91,7 @@ function classTypeString(classType){
 
 function getPixelsToMoveDown(startMinute){
     startMinute = parseInt(startMinute);
-    return (startMinute / 60) * 90;
+    return (startMinute / 60) * 70;
 }
 
 function getStartHourAndMinute_2(startHour_1, startMinute_1){
@@ -104,6 +105,11 @@ function getStartHourAndMinute_2(startHour_1, startMinute_1){
         startHour_2 = startHour_1 + 1;
     }
     return [String(startHour_2), String(startMinute_2)];
+}
+
+function getColorIndex(classCode){
+    var index = uniqueClasses.indexOf(classCode);
+    return index + 1;
 }
 
 function showScheduleData(scheduleData){
@@ -148,9 +154,9 @@ function showScheduleData(scheduleData){
             console.log("timeslot_2: ",timeslot_2)
 
             content += `
-            <div class="scheduled-class-half" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start_1 + 1}; border-bottom: None; transform: translateY(${pixels_to_move_down_1}px);">
+            <div class="scheduled-class-half js-scheduled-class" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start_1 + 1}; border-bottom: None; transform: translateY(${pixels_to_move_down_1}px);">
                 <div class="scheduled-class-wrapper">
-                    <div class="scheduled-class-color" style="background-color:var(--UNAERP-color-${i+1})";></div>
+                    <div class="scheduled-class-color" style="background-color:var(--UNAERP-color-${getColorIndex(class_code)})";></div>
                     <div class="scheduled-class-content-half">
                         <p class="class-code-type">${class_code} - ${class_type_1}</p>
                         <p class="class-name">${class_name}</p>
@@ -160,9 +166,9 @@ function showScheduleData(scheduleData){
                 </div>
             </div>`
             content += `
-            <div class="scheduled-class-half" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start_2 + 1}; border-bottom: None; transform: translateY(${pixels_to_move_down_2}px);">
+            <div class="scheduled-class-half js-scheduled-class" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start_2 + 1}; border-bottom: None; transform: translateY(${pixels_to_move_down_2}px);">
                 <div class="scheduled-class-wrapper">
-                    <div class="scheduled-class-color" style="background-color:var(--UNAERP-color-${i+1})";></div>
+                    <div class="scheduled-class-color" style="background-color:var(--UNAERP-color-${getColorIndex(class_code)})";></div>
                     <div class="scheduled-class-content-half">
                         <p class="class-code-type">${class_code} - ${class_type_2}</p>
                         <p class="class-name">${class_name}</p>
@@ -175,25 +181,27 @@ function showScheduleData(scheduleData){
         else
         {
             content += `
-            <div class="scheduled-class-full" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start_1 + 1} / span 2; border-bottom: None; transform: translateY(${pixels_to_move_down_1}px);">
+            <div class="scheduled-class-full js-scheduled-class" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start_1 + 1} / span 2; border-bottom: None; transform: translateY(${pixels_to_move_down_1}px);">
                 <div class="scheduled-class-wrapper">
-                    <div class="scheduled-class-color" style="background-color:var(--UNAERP-color-${i+1})";></div>
-                    <div class="scheduled-class-content">
+                    <div class="scheduled-class-color" style="background-color:var(--UNAERP-color-${getColorIndex(class_code)})";></div>
+            
                         <div class="scheduled-class-content-full">
                             <p class="class-code-type">${class_code} - ${class_type_1}</p>
                             <p class="class-name">${class_name}</p>
-                            <p class="professor">Prof: ${professor_name}</p>
+                            <p class="professor" style="display: none;">Prof: ${professor_name}</p>
+                            <p class="class-time" style="display: none";>${timeslot}</p>
                         </div>
                         <div class="scheduled-class-content-half-time">
-                            <p class="class-time">${timeslot}</p>
+                            <p class="class-time" style="display: none";>${timeslot}</p>
                         </div>
-                    </div>
+                    
                 </div>
             </div>`
         }
     }
     HTMLSchedule.innerHTML = content;
-    listenToClickScheduledClassesHalf();
+    uniqueClasses = [];
+    listenToClickScheduledClasses();
 }
 
 function fillContentPopup(HTMLscheduledClass){
@@ -233,9 +241,9 @@ function handlePopupClose() {
     HTMLClosePopup.removeEventListener('click', handlePopupClose);
 }
 
-function listenToClickScheduledClassesHalf(){
-    HTMLScheduledClassesHalf = document.querySelectorAll('.scheduled-class-half');
-    HTMLScheduledClassesHalf.forEach(element => {
+function listenToClickScheduledClasses(){
+    HTMLScheduledClasses = document.querySelectorAll('.js-scheduled-class');
+    HTMLScheduledClasses.forEach(element => {
         element.addEventListener('click', function(){
             HTMLPopup.style.display = "block";
             blurContent(HTMLPopup, "block");
@@ -246,11 +254,8 @@ function listenToClickScheduledClassesHalf(){
 }
 
 function filterScheduleData(scheduleData){
-    console.log("scheduleData: ",scheduleData)
     var semesterSelectionValue = parseInt(HTMLsemesterSelection.options[HTMLsemesterSelection.selectedIndex].value);
     var classSelectionValue = String(HTMLclassSelection.options[HTMLclassSelection.selectedIndex].value);
-    console.log("semesterSelectionValue: ",semesterSelectionValue)
-    console.log("classSelectionValue: ",classSelectionValue)
     // filter the data according to the selected semester and class
     var filteredscheduleData = [];
     for (let i = 0; i < scheduleData.length; i++) {
@@ -259,8 +264,13 @@ function filterScheduleData(scheduleData){
             filteredscheduleData.push(scheduleData[i]);
         }
     }
-    console.log("Filtered object")
-    console.log(filteredscheduleData);
+   
+    for (let i = 0; i < filteredscheduleData.length; i++) {
+        if (!uniqueClasses.includes(filteredscheduleData[i].class_data.class)){
+            uniqueClasses.push(filteredscheduleData[i].class_data.class);
+        }
+    }
+
     showScheduleData(filteredscheduleData);
 }
 

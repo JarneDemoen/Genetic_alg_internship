@@ -10,32 +10,30 @@
     font-weight: normal;
 }
 
+@font-face {
+    font-family: 'Open Sans Light';
+    src: url('../fonts/OpenSans-Light.ttf');
+    font-weight: normal;
+}
+
 :root{
     --UNAERP-blue: #032565;
     --UNAERP-dark-blue: #001A4F;
     --UNAERP-yellow: #F2D200;
     --UNAERP-grey: #7B7B7B;
 
-    --UNAERP-color-1: #FF0000;
-    --UNAERP-color-2: #00FF00;
-    --UNAERP-color-3: #0000FF;
-    --UNAERP-color-4: #FFFF00;
-    --UNAERP-color-5: #00FFFF;
-    --UNAERP-color-6: #FF00FF;
-    --UNAERP-color-7: #C0C0C0;
-    --UNAERP-color-8: #04043c;
-    --UNAERP-color-9: #800000;
-    --UNAERP-color-10: #808000;
-    --UNAERP-color-11: #FF6347;
-    --UNAERP-color-12: #800080;
-    --UNAERP-color-13: #008080;
-    --UNAERP-color-14: #808080;
-    --UNAERP-color-15: #196b19;
-    --UNAERP-color-16: #e0ab47d3;
-    --UNAERP-color-17: #b1e0e1;
-    --UNAERP-color-18: #9d4ebf;
-    --UNAERP-color-19: #956c21;
-    --UNAERP-color-20: #FFD700;
+    --UNAERP-color-1: #800000;
+    --UNAERP-color-2: #71fdff;
+    --UNAERP-color-3: #FF00FF;
+    --UNAERP-color-4: #FFD700;
+    --UNAERP-color-5: #808080;
+    --UNAERP-color-6: #FF6347;
+    --UNAERP-color-7: #008080;
+    --UNAERP-color-8: #196b19;
+    --UNAERP-color-9: #956c21;
+    --UNAERP-color-10: #6d2e82;
+
+    --font-family: 'Open Sans';
 
 }
 
@@ -69,7 +67,7 @@ box-sizing: inherit;
     background-repeat: no-repeat;
     padding-left: 16px;
     padding-top: 8px;
-    font-family: 'UNAERPFONT';
+    font-family: var(--font-family);
 }
 
 .timetable-header-logo {
@@ -81,7 +79,7 @@ box-sizing: inherit;
     padding: 5px 0 0 105px;
     background-position: left center;
     background-repeat: no-repeat;
-    font-size: 24px;
+    font-size: 18px;
     font-weight: normal;
     color: white;
     text-shadow: none;
@@ -89,63 +87,65 @@ box-sizing: inherit;
 }
 
 .schedule-title{
-    font-size: 36px;
+    font-size: 20px;
     font-weight: normal;
     color: var(--UNAERP-dark-blue);
     text-align: center;
     margin-top: 8px;
     margin-bottom: 8px;
     justify-content: center;
-    font-family: 'UNAERPFONT';
+    font-family: var(--font-family);
     display: flex;
     align-items: center;
     background-color: white;
 }
 
 .subtitle{
-    font-size: 24px;
+    font-size: 20px;
     font-weight: normal;
     color: var(--UNAERP-dark-blue);
     margin-top: 8px;
     margin-bottom: 8px;
     justify-content: center;
     align-content: center;
-    font-family: 'UNAERPFONT';
+    font-family: var(--font-family);
     display: flex;
 }
 
 .schedule-selection{
-    margin-right: 24px;
-    margin-left: 8px;
+    margin-right: 12px;
+    margin-left: 4px;
     border: none;
-    font-size: 36px;
+    font-size: 20px;
     color: var(--UNAERP-dark-blue);
-    font-family: 'UNAERPFONT';
+    font-family: var(--font-family);
     cursor: pointer;
 }
 
 .schedule-selection option{
-    font-size: 18px;
-    font-family: 'UNAERPFONT';
+    font-size: 16px;
+    font-family: var(--font-family);
     color: var(--UNAERP-dark-blue);
     cursor: pointer;
+    /* background-color: var(--UNAERP-dark-blue);
+    color: white; */
 }
 
 .schedule-day-title{
-    width: 80%;
+    width: 900px;
     background-color: var(--UNAERP-yellow);
     border-radius: 5px;
-    height: 60px;
+    height: 50px;
     margin-left: auto;
     margin-right: auto;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: 60px;
-    font-size: 16px;
+    grid-template-rows: 50px;
+    font-size: 12px;
     color: var(--UNAERP-dark-blue);
     align-items: center;
     justify-items: center;
-    font-family: 'UNAERPFONT';
+    font-family: var(--font-family);
     position: sticky;
     top: 0px;
     z-index: 1;
@@ -160,10 +160,9 @@ box-sizing: inherit;
 }
 
 .schedule h3{
-    font-size: 16px;
+    font-size: 12px;
     color: var(--UNAERP-grey);
     font-weight: lighter;
-    margin-left: 24px;
     margin-top: 0px;
 }
 
@@ -174,21 +173,22 @@ box-sizing: inherit;
 
 
 .schedule-grid{
-    width: 80%;
+    width: 900px;
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: repeat(17, 90px);
+    grid-template-rows: repeat(17, 70px);
 }
 
 .timeslots{
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(17, 90px);
-    margin-top: -14px;
-    font-family: 'UNAERPFONT';
+    grid-template-rows: repeat(17, 70px);
+    margin-top: -9px;
+    font-family: var(--font-family);
+    margin-left: 200px
 }
 
 /* .schedule-grid > div.scheduled-class-half {
@@ -196,15 +196,12 @@ box-sizing: inherit;
     grid-row: 3;
 } */
 .scheduled-class-half, .scheduled-class-full{
-    font-family: 'UNAERPFONT';
+    font-family: var(--font-family);
     height: calc(5/6 * 100%);
     padding-bottom: 1px;
     width: 95%;
     justify-self: center;
     background-color: white;
-}
-
-.scheduled-class-half{
     cursor: pointer;
 }
 
@@ -223,22 +220,17 @@ box-sizing: inherit;
     height: 100%;
     background-color: var(--UNAERP-color-9);
     border-radius: 8px 0px 0px 8px;
-    margin-right: 2px;
+    margin-right: 1px;
+    padding-bottom: 1px;
+    /* max-height: 114.66666px; */
 }
 
-.scheduled-class-color-2{
-    width: 20px;
-    height: 100%;
-    background-color: var(--UNAERP-color-2);
-    border-radius: 8px 0px 0px 8px;
-}
-
-.scheduled-class-content{
+/* .scheduled-class-content{
     display: flex;
     flex-direction: column;
-    font-family: 'UNAERPFONT';
+    font-family: var(--font-family);
     width: 100%;
-}
+} */
 
 .scheduled-class-content-half{
     height: 100%;
@@ -247,44 +239,57 @@ box-sizing: inherit;
     border-radius: 0px 8px 8px 0px;
 }
 
+.scheduled-class-content-half > .class-name{
+    font-size: 12px;
+    font-weight: lighter;
+}
+
+.scheduled-class-content-half > .class-code-type{
+    margin-bottom: 0px;
+    font-size: 12px;
+    font-family: 'Open Sans Light'
+}
+
 .scheduled-class-content-full{
     height: 100%;
     width: 100%;
     background-color: var(--UNAERP-dark-blue);
-    border-radius: 0px 8px 0px 0px;
+    border-radius: 0px 8px 8px 0px;
 }
 
 .scheduled-class-content-half-time{
-    height: 30px;
+    /* height: auto; */
     background-color: var(--UNAERP-dark-blue);
     border-radius: 0px 0px 8px 0px;
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 .class-time{
-    font-size: 16px;
+    font-size: 12px;
     color: white;
     margin-left: 8px;
     margin-top: 2px;
 }
 
 .class-code-type{
-    font-size: 16px;
+    font-size: 14px;
     color: white;
     margin-left: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
+    font-family: 'Open Sans Light'
+
 }
 
 .class-name{
-    font-size: 18px;
+    font-size: 14px;
     color: white;
     margin-left: 8px;
     margin-right: 8px;
-    line-height: 22px;
+    /* line-height: 22px; */
 }
 
 .professor{
-    font-size: 16px;
+    font-size: 12px;
     color: white;
     margin-left: 8px;
     margin-right: 8px;
@@ -293,8 +298,8 @@ box-sizing: inherit;
 }
 
 .left-arrow{
-    width: 16px;
-    height: 16px;
+    width: 12px;
+    height: 12px;
     transform: rotate(180deg);
     cursor: pointer;
     align-self: center;
@@ -302,8 +307,8 @@ box-sizing: inherit;
 }
 
 .right-arrow{
-    width: 16px;
-    height: 16px;
+    width: 12px;
+    height: 12px;
     cursor: pointer;
     align-self: center;
 }
@@ -314,18 +319,18 @@ box-sizing: inherit;
     cursor: pointer;
     border: none;
     color: white;
-    font-size: 24px;
-    font-family: 'UNAERPFONT';
+    font-size: 16px;
+    font-family: var(--font-family);
     margin: 0px;
-    padding: 8px 12px;
+    padding: 6px 8px;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
 .reload-svg{
-    width: 24px;
-    height: 24px;
+    width: 18px;
+    height: 18px;
     margin-left: 8px;
     margin-right: 8px;
 }
@@ -361,7 +366,7 @@ box-sizing: inherit;
     z-index: 1;
     border-radius: 8px;
     min-width: 250px;
-    font-family: 'UNAERPFONT';
+    font-family: var(--font-family);
     background-color: white;
     display: none;
     box-shadow: rgba(0, 0, 0, 0.1) 0px 20px 25px -5px, rgba(0, 0, 0, 0.04) 0px 10px 10px -5px;
@@ -370,7 +375,7 @@ box-sizing: inherit;
 .popup-scheduled-class-half-header{
     text-align: center;
     background-color: #e9e9e9;
-    font-size: 24px;
+    font-size: 16px;
     color: black;
     border: solid 1px #ddd;
     border-radius: 8px 8px 0px 0px;
@@ -388,10 +393,13 @@ box-sizing: inherit;
 .popup-scheduled-class-half-attributes{
     width: 60px;
     color: grey;
+    font-size: 14px;
 }
 
 .popup-scheduled-class-half-content{
-    padding-left: 16px;
+    padding-left: 24px;
+    font-size: 14px;
+    font-family: 'Open Sans Light';
 }
 
 .popup-scheduled-class-half-close{
@@ -404,10 +412,41 @@ box-sizing: inherit;
 }
 
 .loader-text{
-    font-size: 24px;
-    font-family: 'UNAERPFONT';
+    font-size: 16px;
+    font-family: var(--font-family);
     color: white;
     margin-top: 8px;
     margin-left: 8px;
     font-weight: 500;
+}
+
+/* max screen width rule */
+@media (max-width: 1430px){
+    .timeslots{
+        margin-left: 160px;
+    }
+}
+
+@media (max-width: 1321px){
+    .timeslots{
+        margin-left: 120px;
+    }
+}
+
+@media (max-width: 1235px){
+    .timeslots{
+        margin-left: 80px;
+    }
+}
+
+@media (max-width: 1140px){
+    .timeslots{
+        margin-left: 30px;
+    }
+}
+
+@media (max-width: 1040px){
+    .timeslots{
+        margin-left: 6px;
+    }
 }
