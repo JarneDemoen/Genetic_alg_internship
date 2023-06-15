@@ -99,6 +99,7 @@ box-sizing: inherit;
     font-family: 'UNAERPFONT';
     display: flex;
     align-items: center;
+    background-color: white;
 }
 
 .subtitle{
@@ -145,6 +146,9 @@ box-sizing: inherit;
     align-items: center;
     justify-items: center;
     font-family: 'UNAERPFONT';
+    position: sticky;
+    top: 0px;
+    z-index: 1;
 }
 
 .schedule-day-title h2{
