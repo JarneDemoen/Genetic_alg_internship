@@ -170,6 +170,7 @@ box-sizing: inherit;
     display: flex;
 }
 
+
 .schedule h3{
     font-size: 12px;
     color: var(--UNAERP-grey);
@@ -432,6 +433,16 @@ box-sizing: inherit;
     font-weight: 500;
 }
 
+.empty-schedule{
+    font-size: 16px;
+    font-family: var(--font-family);
+    color: var(--UNAERP-dark-blue);
+    margin-top: 18px;
+    margin-left: auto;
+    margin-right: auto;
+    width: fit-content;
+}
+
 /* max screen width rule */
 @media (max-width: 1430px){
     .timeslots{
@@ -462,3 +473,31 @@ box-sizing: inherit;
         margin-left: 6px;
     }
 }
+
+/* Define the style for the scrollbar */
+::-webkit-scrollbar {
+    width: 10px; /* Width of the scrollbar */
+  }
+  
+  /* Define the track (the area behind the thumb) */
+  ::-webkit-scrollbar-track {
+    background: white; /* Color of the track */
+  }
+  
+  /* Define the thumb (the draggable scrolling element) */
+  ::-webkit-scrollbar-thumb {
+    background: #ddd; /* Color of the thumb */
+  }
+  
+  /* Show the scrollbar on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: white; /* Color of the thumb on hover */
+  }
+  
+  /* Force the scrollbar to always be visible */
+  body {
+    scrollbar-width: thin; /* "thin" for a thin scrollbar or "auto" for a platform-specific scrollbar */
+    scrollbar-color: #ddd #5c1515; /* Color of the thumb and track respectively */
+    overflow-y: scroll;
+  }
+  

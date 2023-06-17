@@ -16,6 +16,10 @@ var HTMLLoader;
 var HTMLScheduledClasses;
 var HTMLPopup;
 var HTMLClosePopup;
+var HTMLCompleteSchedule;
+var HTMLEmptyScheduleText;
+
+var scroll = true;
 
 var scheduleDataEven = [];
 var scheduleDataOdd = [];
@@ -32,6 +36,7 @@ var timeslots = [
 var days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
 
 function drawScheduleLines(){
+    console.log("drawScheduleLines")
     var content = "";
     for (let i = 1; i < 6; i++) {
         for (let j = 1; j < 18; j++) {
@@ -42,6 +47,7 @@ function drawScheduleLines(){
 }
 
 function listenToClickArrow(){
+    console.log("listenToClickArrow")
     const HTMLperiod = document.querySelector('.period');
     var period = HTMLperiod.innerHTML;
     // add an event listener to all of the elements with the class .js-period
@@ -113,6 +119,7 @@ function getColorIndex(classCode){
 }
 
 function showScheduleData(scheduleData){
+    console.log("showScheduleData")
     var content = "";
     content += drawScheduleLines();
     for(let i = 0; i < scheduleData.length; i++){
@@ -149,9 +156,6 @@ function showScheduleData(scheduleData){
 
             var timeslot_1 = startHour_1 + ":" + startMinute_1 + " - " + startHour_2 + ":" + startMinute_2;
             var timeslot_2 = startHour_2 + ":" + startMinute_2 + " -" + startEndTimes[1]
-
-            console.log("timeslot_1: ",timeslot_1)
-            console.log("timeslot_2: ",timeslot_2)
 
             content += `
             <div class="scheduled-class-half js-scheduled-class" style="grid-column: ${index_timeslot_day + 1}; grid-row: ${index_timeslot_start_1 + 1}; border-bottom: None; transform: translateY(${pixels_to_move_down_1}px);">
@@ -201,6 +205,7 @@ function showScheduleData(scheduleData){
     }
     HTMLSchedule.innerHTML = content;
     uniqueClasses = [];
+    toggleCompleteSchedule();
     listenToClickScheduledClasses();
 }
 
@@ -242,6 +247,7 @@ function handlePopupClose() {
 }
 
 function listenToClickScheduledClasses(){
+    console.log("listenToClickScheduledClasses")
     HTMLScheduledClasses = document.querySelectorAll('.js-scheduled-class');
     HTMLScheduledClasses.forEach(element => {
         element.addEventListener('click', function(){
@@ -253,7 +259,18 @@ function listenToClickScheduledClasses(){
     })});
 }
 
+function scrollIntoView(){
+    HTMLScheduledClasses = document.querySelectorAll('.js-scheduled-class');
+    console.log("scrollIntoView")
+    HTMLScheduledClasses[0].scrollIntoView({
+        behavior: 'smooth', // Scroll smoothly instead of instantly
+        block: 'start',     // Scroll to the top of the element
+        inline: 'nearest'   // Scroll horizontally as little as possible
+      });
+}
+
 function filterScheduleData(scheduleData){
+    console.log("filterScheduleData")
     var semesterSelectionValue = parseInt(HTMLsemesterSelection.options[HTMLsemesterSelection.selectedIndex].value);
     var classSelectionValue = String(HTMLclassSelection.options[HTMLclassSelection.selectedIndex].value);
     // filter the data according to the selected semester and class
@@ -275,6 +292,7 @@ function filterScheduleData(scheduleData){
 }
 
 function getScheduleData(jsonObject){
+    console.log("getScheduleData")
     blurContent(HTMLLoader, "flex");
     // get the values of the selected options
     var period = document.querySelector('.period').innerHTML;
@@ -288,9 +306,11 @@ function getScheduleData(jsonObject){
     }
     setTurmaSelection();
     filterScheduleData(jsonObject);
+    setScheduleData();
 }
 
 function blurContent(item, display_value){
+    console.log("blurContent")
     if (HTMLContentBlur.style.filter == "blur(5px)")
     {
         HTMLContentBlur.style.filter = "blur(0px)";
@@ -306,12 +326,14 @@ function blurContent(item, display_value){
 }
 
 function listenToClickGenerateScheduleButton(){
+    console.log("listenToClickGenerateScheduleButton")
     HTMLGenerateScheduleButton.addEventListener('click', function(){
         blurContent(HTMLLoader, "flex");
         var period = document.querySelector('.period').innerHTML;
         if (debugMode == false)
         {
             console.log("Generating schedule...")
+            scroll = true;
             handleData(`http://localhost:5000/api/v1/generate_timetable/${period}`, getScheduleData, 'GET');
         }
         else
@@ -616,6 +638,7 @@ function listenToClickGenerateScheduleButton(){
 )};
 
 function setSelection(){
+    console.log("setSelection")
     // in the selection of .js-semester-selection, disable the even options
     var period = document.querySelector('.period').innerHTML;
 
@@ -652,6 +675,7 @@ function setSelection(){
 }
 
 function setTurmaSelection(){
+    console.log("setTurmaSelection")
     var semesterSelectionValue = parseInt(HTMLsemesterSelection.options[HTMLsemesterSelection.selectedIndex].value);
 
     if (semesterSelectionValue >= 4)
@@ -680,6 +704,7 @@ function setTurmaSelection(){
 }
 
 function setScheduleData(){
+    console.log("setScheduleData")
     var period = document.querySelector('.period').innerHTML;
     if (period == 'August - December')
     {
@@ -689,10 +714,30 @@ function setScheduleData(){
     {
         scheduleData = scheduleDataEven;
     }
+    toggleCompleteSchedule();
 }
 
-// for all of the elements of scheduledclassesHalf, create a function that is triggered when the mouse is over the element
-// this function will change the background color of the element to the color of the class
+function toggleCompleteSchedule(){
+    console.log("toggleCompleteSchedule")
+    console.log("scheduleData: ",scheduleData)
+    if (scheduleData.length == 0)
+    {
+        console.log("scheduleData is empty")
+        HTMLCompleteSchedule.style.display = "none";
+        HTMLEmptyScheduleText.style.display = "block";
+    }
+    else
+    {
+        console.log("scheduleData is not empty")
+        HTMLCompleteSchedule.style.display = "flex";
+        HTMLEmptyScheduleText.style.display = "none";
+        if (scroll == true)
+        {
+            scrollIntoView();
+            scroll = false;
+        }
+    }
+}
 
 function init(){
     console.log("DOM Loaded")
@@ -704,6 +749,8 @@ function init(){
     HTMLContentBlur = document.querySelector('.js-content-wrapper-blur');
     HTMLLoader = document.querySelector('.container-loader');
     HTMLPopup = document.querySelector('.js-popup');
+    HTMLCompleteSchedule = document.querySelector('.schedule');
+    HTMLEmptyScheduleText = document.querySelector('.empty-schedule');
 
     HTMLLeftArrow = document.querySelector('.left-arrow');
     HTMLRightArrow = document.querySelector('.right-arrow');
@@ -719,8 +766,9 @@ function init(){
         filterScheduleData(scheduleData);
     });
 
+    toggleCompleteSchedule();
     listenToClickArrow()
-    HTMLSchedule.innerHTML = drawScheduleLines();
+    HTMLSchedule.innerHTML = drawScheduleLines();  
     listenToClickGenerateScheduleButton();
     setSelection();
 }
